@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc:*)",
+      "Bash(python -c \"import sys; print\\(sys.version\\)\")",
+      "Bash(python -c \"import nanobot; print\\(''nanobot ok''\\)\")",
+      "Bash(pip show:*)",
+      "Read(//c/Users/luck/.pgflow/**)",
+      "Bash(python:*)",
+      "Bash(git -C \"C:\\\\Users\\\\luck\\\\Desktop\\\\nanobot\" remote -v)"
+    ]
+  }
+}
