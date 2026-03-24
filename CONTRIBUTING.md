@@ -64,8 +64,8 @@ Keep setup boring and reliable. The goal is to get you into the code quickly:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/pgflow.git
-cd pgflow
+git clone https://github.com/leoyangx/PgFlow.git
+cd PgFlow
 
 # Install with dev dependencies
 pip install -e ".[dev]"
@@ -106,6 +106,6 @@ In practice:
 
 If you have questions, ideas, or half-formed insights, you are warmly welcome here.
 
-Please feel free to open an [issue](https://github.com/your-org/pgflow/issues) or join the community.
+Please feel free to open an [issue](https://github.com/leoyangx/PgFlow/issues) or join the community.
 
 Thank you for spending your time and care on PgFlow. We genuinely welcome contributions of all sizes.

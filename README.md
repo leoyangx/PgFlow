@@ -6,6 +6,11 @@
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform">
   </p>
+  <p>
+    <a href="https://github.com/leoyangx/PgFlow">GitHub</a> ·
+    <a href="https://github.com/leoyangx/PgFlow/issues">Issues</a> ·
+    <a href="https://github.com/leoyangx/PgFlow/releases">Releases</a>
+  </p>
 </div>
 
 PgFlow is a local-first personal AI assistant that lives on your own computer and grows smarter with every conversation. Control it from Telegram, Discord, or any chat app — your data never leaves your machine.
@@ -21,44 +26,83 @@ PgFlow is a local-first personal AI assistant that lives on your own computer an
 
 ## 📦 Install
 
-**Windows (recommended for end users):**
+### Option A — Standalone .exe (Windows, recommended for end users)
 
-Build the standalone `.exe` installer:
+No Python required. Download the latest release or build it yourself:
+
 ```bat
+:: 1. Clone the repo
+git clone https://github.com/leoyangx/PgFlow.git
+cd PgFlow
+
+:: 2. Install Python dependencies (requires Python 3.11+)
+pip install -e .
+
+:: 3. Build the .exe
 build\windows\build.bat
 ```
-Then run `dist\pgflow\pgflow.exe` — no Python required.
 
-**Developers (from source):**
+The output is `dist\pgflow\pgflow.exe`. Copy the entire `dist\pgflow\` folder anywhere you like.
+
+> **Note:** Double-clicking `pgflow.exe` will flash and close — this is normal for a CLI tool.
+> Always run it from a terminal (Command Prompt or PowerShell).
+
+### Option B — From source (developers)
+
 ```bash
-git clone <your-repo>
-cd nanobot
+git clone https://github.com/leoyangx/PgFlow.git
+cd PgFlow
 pip install -e .
 ```
 
+Then use the `pgflow` command directly.
+
 ## 🚀 Quick Start
 
-**1. Initialize**
+### Step 1 — Initialize
+
 ```bash
 pgflow onboard --wizard
 ```
-Choose your workspace, configure your LLM provider, and connect a chat channel.
 
-**2. Start**
+The wizard will guide you through:
+- Choosing a workspace folder (`~/.pgflow/workspace/` by default)
+- Setting your LLM provider and API key
+- Connecting a chat channel (e.g. Telegram)
+
+### Step 2 — Start the gateway
+
 ```bash
 pgflow gateway
 ```
 
-**3. Enable autostart (recommended)**
+The gateway connects all your configured channels. Keep this running in the background.
+
+### Step 3 — Enable autostart (recommended)
+
 ```bash
 pgflow service install
 ```
-PgFlow will start automatically on login — no need to run it manually ever again.
 
-**4. Open dashboard**
+PgFlow will start automatically every time you log in — no need to run it manually again.
+
+- **Windows:** Task Scheduler (`ONLOGON`, highest privilege)
+- **macOS:** launchd (`~/Library/LaunchAgents/`)
+- **Linux:** systemd user service
+
+To disable autostart:
+
+```bash
+pgflow service uninstall
+```
+
+### Step 4 — Open the dashboard
+
 ```bash
 pgflow dashboard
 ```
+
+Opens `http://localhost:18791` in your browser — a local management UI showing status, installed skills, and config.
 
 ## 💬 Supported Chat Channels
 
@@ -80,7 +124,8 @@ pgflow dashboard
 
 Config file: `~/.pgflow/config.json`
 
-**Set your API key** (OpenRouter recommended):
+**Set your API key** (OpenRouter recommended — works with Claude, GPT-4, Gemini, etc.):
+
 ```json
 {
   "providers": {
@@ -97,6 +142,11 @@ Config file: `~/.pgflow/config.json`
 ```
 
 **Connect Telegram:**
+
+1. Message [@BotFather](https://t.me/BotFather) on Telegram → create a bot → copy the token
+2. Get your user ID from [@userinfobot](https://t.me/userinfobot)
+3. Add to `~/.pgflow/config.json`:
+
 ```json
 {
   "channels": {
@@ -109,6 +159,8 @@ Config file: `~/.pgflow/config.json`
 }
 ```
 
+> **Security:** `allowFrom` is a whitelist. An empty list `[]` denies everyone. Set `["*"]` to allow all users (not recommended for public bots).
+
 ## 💻 CLI Reference
 
 | Command | Description |
@@ -117,14 +169,14 @@ Config file: `~/.pgflow/config.json`
 | `pgflow agent` | Interactive chat in terminal |
 | `pgflow agent -m "..."` | Send a single message |
 | `pgflow gateway` | Start the gateway (connects all channels) |
-| `pgflow dashboard` | Open local management dashboard |
+| `pgflow dashboard` | Open local management dashboard at localhost:18791 |
+| `pgflow status` | Show current config and connection status |
 | `pgflow service install` | Enable autostart on login |
 | `pgflow service uninstall` | Disable autostart |
-| `pgflow service status` | Check service status |
+| `pgflow service status` | Check autostart service status |
 | `pgflow skill list` | List installed skills |
 | `pgflow skill search <query>` | Search ClawHub for skills |
-| `pgflow skill install <slug>` | Install a skill |
-| `pgflow status` | Show current config status |
+| `pgflow skill install <slug>` | Install a skill from ClawHub |
 | `pgflow build` | Package as standalone executable |
 
 ## 🎯 Skills
@@ -137,7 +189,17 @@ pgflow skill install web-scraper
 pgflow skill list
 ```
 
-Or place a `SKILL.md` file in `~/.pgflow/workspace/skills/<skill-name>/` manually.
+Or place a `SKILL.md` file manually in `~/.pgflow/workspace/skills/<skill-name>/`.
+
+**Built-in skills:**
+
+| Skill | Description |
+|-------|-------------|
+| `github` | Interact with GitHub using the `gh` CLI |
+| `weather` | Get weather info |
+| `summarize` | Summarize URLs, files, and YouTube videos |
+| `tmux` | Remote-control tmux sessions |
+| `cron` | Schedule reminders and recurring tasks |
 
 ## 🔒 Security
 
@@ -168,19 +230,28 @@ Your Computer
 ## 📁 Project Structure
 
 ```
-nanobot/
-├── agent/          # Core agent logic
-├── channels/       # Chat channel integrations
-├── cli/            # CLI commands
-├── config/         # Configuration loading
-├── dashboard/      # Local web dashboard
-├── service/        # Autostart service management
-├── skills/         # Built-in skill packs
-├── store/          # Skill store client
-├── templates/      # Default workspace files
-└── build/          # Packaging scripts
+PgFlow/
+├── nanobot/        # Core Python package
+│   ├── agent/      # Agent logic and LLM loop
+│   ├── channels/   # Chat channel integrations
+│   ├── cli/        # CLI commands
+│   ├── config/     # Configuration loading
+│   ├── dashboard/  # Local web dashboard
+│   ├── service/    # Autostart service management
+│   ├── skills/     # Built-in skill packs
+│   ├── store/      # Skill store client
+│   └── templates/  # Default workspace files
+├── build/          # Packaging scripts (.exe, .dmg)
+├── bridge/         # WhatsApp bridge (Node.js)
+└── tests/          # Test suite
 ```
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
+
+Issues and PRs welcome: [https://github.com/leoyangx/PgFlow/issues](https://github.com/leoyangx/PgFlow/issues)
 
 ## 📄 License
 
-MIT
+MIT — see [LICENSE](./LICENSE)
