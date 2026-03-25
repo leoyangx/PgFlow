@@ -1087,20 +1087,20 @@ def run_onboard(initial_config: Config | None = None) -> OnboardResult:
         _show_main_menu_header()
 
         try:
-        answer = _get_questionary().select(
-            "请选择要配置的项目:",
-            choices=[
-                "[P] AI 服务商  (配置 API Key)",
-                "[C] 聊天渠道  (Telegram / 微信 / QQ 等)",
-                "[A] 智能体设置  (模型 / 温度 / 行为)",
-                "[G] 网关设置  (端口 / 心跳)",
-                "[T] 工具设置  (联网搜索 / 命令执行)",
-                "[V] 查看当前配置摘要",
-                "[S] 保存并退出",
-                "[X] 不保存退出",
-            ],
-            qmark=">",
-        ).ask()
+            answer = _get_questionary().select(
+                "请选择要配置的项目:",
+                choices=[
+                    "[P] AI 服务商  (配置 API Key)",
+                    "[C] 聊天渠道  (Telegram / 微信 / QQ 等)",
+                    "[A] 智能体设置  (模型 / 温度 / 行为)",
+                    "[G] 网关设置  (端口 / 心跳)",
+                    "[T] 工具设置  (联网搜索 / 命令执行)",
+                    "[V] 查看当前配置摘要",
+                    "[S] 保存并退出",
+                    "[X] 不保存退出",
+                ],
+                qmark=">",
+            ).ask()
         except KeyboardInterrupt:
             answer = None
 
