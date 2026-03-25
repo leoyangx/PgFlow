@@ -5,20 +5,26 @@
 import sys
 import litellm
 from pathlib import Path
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 ROOT = Path(SPECPATH).parent.parent  # repo root
 LITELLM_DIR = Path(litellm.__file__).parent
 
-# Collect ALL nanobot submodules so nothing is missed
+# Insert ROOT so collect_submodules can find nanobot (requires pip install -e .)
 sys.path.insert(0, str(ROOT))
-nanobot_all = collect_submodules("nanobot")
+
+# Collect all nanobot submodules (hiddenimports)
+nanobot_hidden = collect_submodules("nanobot")
 
 a = Analysis(
     [str(ROOT / "nanobot" / "__main__.py")],
     pathex=[str(ROOT)],
     binaries=[],
     datas=[
+        # Ship nanobot Python source as data files — guarantees every .py is present
+        # regardless of PyInstaller's static analysis result.
+        # A runtime hook adds this to sys.path so imports work normally.
+        (str(ROOT / "nanobot"), "nanobot_src/nanobot"),
         # Include all template markdown files
         (str(ROOT / "nanobot" / "templates"), "nanobot/templates"),
         # Include built-in skills
@@ -30,7 +36,7 @@ a = Analysis(
         # Project logo for tray icon
         (str(ROOT / "nanobot_logo.png"), "."),
     ],
-    hiddenimports=nanobot_all + [
+    hiddenimports=nanobot_hidden + [
         # Deps that PyInstaller misses
         "tiktoken_ext.openai_public",
         "tiktoken_ext",
@@ -55,9 +61,9 @@ a = Analysis(
         "pywintypes",
         "win32print",
     ],
-    hookspath=[],
+    hookspath=[str(ROOT / "build" / "windows" / "hooks")],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[str(ROOT / "build" / "windows" / "rthook_nanobot.py")],
     excludes=["tkinter", "matplotlib", "numpy", "pandas"],
     noarchive=False,
     optimize=1,
@@ -76,7 +82,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=True,   # CLI app — keep console window
-    icon=str(ROOT / "pgflow.ico"),  # replace with .ico if available
+    icon=str(ROOT / "pgflow.ico"),
 )
 
 coll = COLLECT(
