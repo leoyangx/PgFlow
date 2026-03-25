@@ -75,11 +75,11 @@ _HTML = """<!DOCTYPE html>
   .cmd-block { background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; font-family: monospace; font-size: 14px; color: var(--green); text-align: left; margin: 0 auto 12px; display: inline-block; min-width: 320px; cursor: pointer; }
   .cmd-block:hover { border-color: var(--accent); }
   .copy-hint { font-size: 12px; color: var(--muted); }
-  /* Gateway control */
-  .gateway-status { display: flex; align-items: center; gap: 12px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .dot.red   { background: var(--red); }
+  /* Gateway status */
+  .gateway-status { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.red   { background: var(--red); box-shadow: 0 0 4px var(--red); }
   .dot.amber { background: var(--amber); }
   /* Config editor */
   .editor-wrap { position: relative; }
@@ -131,26 +131,19 @@ _HTML = """<!DOCTYPE html>
     <p>配置完成后，刷新此页面即可查看状态。</p>
   </div>
 
-  <!-- Gateway Control -->
+  <!-- Gateway Status (read-only — use tray icon to start/stop) -->
   <div class="card">
-    <h2>
-      <span>网关控制</span>
-      <div class="btn-row">
-        <button class="btn btn-green" id="btn-start" onclick="gatewayAction('start')">▶ 启动</button>
-        <button class="btn btn-red"   id="btn-stop"  onclick="gatewayAction('stop')">■ 停止</button>
-        <button class="btn btn-muted" id="btn-restart" onclick="gatewayAction('restart')">↺ 重启</button>
-      </div>
-    </h2>
+    <h2>网关状态</h2>
     <div class="row">
-      <label>网关状态</label>
+      <label>运行状态</label>
       <div class="gateway-status">
         <span class="dot" id="gw-dot"></span>
         <span id="gw-label">检测中…</span>
       </div>
     </div>
     <div class="row">
-      <label>进程 PID</label>
-      <span id="gw-pid" style="font-family:monospace;font-size:13px">—</span>
+      <label>提示</label>
+      <span style="font-size:12px;color:var(--muted)">通过系统托盘图标启动或停止网关</span>
     </div>
   </div>
 
@@ -285,50 +278,19 @@ async function loadStatus() {
   loadGatewayStatus();
 }
 
-// ── Gateway Control ────────────────────────────────────────────────────────
+// ── Gateway Status ──────────────────────────────────────────────────────────
 async function loadGatewayStatus() {
   const d = await api('/api/gateway');
   const dot   = document.getElementById('gw-dot');
   const label = document.getElementById('gw-label');
-  const pid   = document.getElementById('gw-pid');
-  const btnStart   = document.getElementById('btn-start');
-  const btnStop    = document.getElementById('btn-stop');
-  const btnRestart = document.getElementById('btn-restart');
 
   if (d.running) {
-    dot.className   = 'dot green';
+    dot.className     = 'dot green';
     label.textContent = '运行中';
-    pid.textContent = d.pid || '—';
-    btnStart.disabled   = true;
-    btnStop.disabled    = false;
-    btnRestart.disabled = false;
   } else {
-    dot.className   = 'dot red';
+    dot.className     = 'dot red';
     label.textContent = '已停止';
-    pid.textContent = '—';
-    btnStart.disabled   = false;
-    btnStop.disabled    = true;
-    btnRestart.disabled = true;
   }
-}
-
-async function gatewayAction(action) {
-  const dot   = document.getElementById('gw-dot');
-  const label = document.getElementById('gw-label');
-  dot.className = 'dot amber';
-  label.textContent = '操作中…';
-  ['btn-start','btn-stop','btn-restart'].forEach(id => {
-    document.getElementById(id).disabled = true;
-  });
-  try {
-    await api('/api/gateway', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({action}),
-    });
-  } catch(e) {}
-  // Wait a moment then refresh
-  setTimeout(loadGatewayStatus, 1500);
 }
 
 // ── Skills ─────────────────────────────────────────────────────────────────
