@@ -6,8 +6,8 @@
 setlocal
 cd /d "%~dp0..\.."
 
-echo [1/3] Installing PyInstaller...
-python -m pip install pyinstaller
+echo [1/3] Installing build dependencies...
+python -m pip install pyinstaller pystray Pillow pywin32
 if errorlevel 1 (
     echo ERROR: pip failed. Make sure your venv is activated.
     exit /b 1

@@ -3,9 +3,11 @@
 # Usage: pyinstaller build/windows/pgflow.spec
 
 import sys
+import litellm
 from pathlib import Path
 
 ROOT = Path(SPECPATH).parent.parent  # repo root
+LITELLM_DIR = Path(litellm.__file__).parent
 
 a = Analysis(
     [str(ROOT / "nanobot" / "__main__.py")],
@@ -18,6 +20,10 @@ a = Analysis(
         (str(ROOT / "nanobot" / "skills"), "nanobot/skills"),
         # Include bridge (WhatsApp bridge binaries)
         (str(ROOT / "bridge"), "nanobot/bridge"),
+        # litellm model pricing data (required at runtime, missed by PyInstaller)
+        (str(LITELLM_DIR / "model_prices_and_context_window_backup.json"), "litellm"),
+        # Project logo for tray icon
+        (str(ROOT / "nanobot_logo.png"), "."),
     ],
     hiddenimports=[
         # Channels
@@ -38,10 +44,14 @@ a = Analysis(
         "nanobot.providers.custom_provider",
         "nanobot.providers.azure_openai_provider",
         "nanobot.providers.openai_codex_provider",
-        # Store & Dashboard & Service
+        # Store & Dashboard & Service & Tray
         "nanobot.store.skills",
         "nanobot.dashboard.server",
         "nanobot.service.manager",
+        "nanobot.tray.app",
+        "nanobot.cli.onboard",
+        "nanobot.cli.models",
+        "nanobot.cli.stream",
         # Deps that PyInstaller misses
         "tiktoken_ext.openai_public",
         "tiktoken_ext",
@@ -51,11 +61,25 @@ a = Analysis(
         "loguru",
         "questionary",
         "prompt_toolkit",
+        # Tray deps
+        "pystray",
+        "pystray._win32",
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "PIL.ImageEnhance",
+        # pywin32 — required by pystray._win32
+        "win32api",
+        "win32con",
+        "win32gui",
+        "win32gui_struct",
+        "pywintypes",
+        "win32print",
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "numpy", "pandas", "PIL"],
+    excludes=["tkinter", "matplotlib", "numpy", "pandas"],
     noarchive=False,
     optimize=1,
 )
@@ -73,7 +97,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=True,   # CLI app — keep console window
-    icon=str(ROOT / "nanobot_logo.png"),  # replace with .ico if available
+    icon=str(ROOT / "pgflow.ico"),  # replace with .ico if available
 )
 
 coll = COLLECT(

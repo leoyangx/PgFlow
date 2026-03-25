@@ -60,7 +60,15 @@ _HTML = """<!DOCTYPE html>
   .refresh-btn:hover { opacity: .85; }
   .config-key { color: var(--muted); font-size: 12px; font-family: monospace; }
   .config-val { font-size: 13px; font-family: monospace; word-break: break-all; }
-  .masked { color: var(--muted); }
+  .setup-banner { background: linear-gradient(135deg, #1a2744 0%, #1a1d2e 100%); border: 1px solid var(--accent); border-radius: var(--radius); padding: 40px 32px; text-align: center; margin-bottom: 20px; }
+  .setup-banner h2 { font-size: 22px; color: var(--accent); margin-bottom: 12px; }
+  .setup-banner p { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 24px; }
+  .setup-steps { text-align: left; display: inline-block; margin: 0 auto 24px; }
+  .setup-steps li { color: var(--text); font-size: 14px; padding: 6px 0; list-style: none; }
+  .setup-steps li::before { content: attr(data-step); display: inline-block; width: 24px; height: 24px; background: var(--accent); color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 700; margin-right: 10px; }
+  .cmd-block { background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; font-family: monospace; font-size: 14px; color: var(--green); text-align: left; margin: 0 auto 12px; display: inline-block; min-width: 320px; cursor: pointer; }
+  .cmd-block:hover { border-color: var(--accent); }
+  .copy-hint { font-size: 12px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -78,6 +86,20 @@ _HTML = """<!DOCTYPE html>
 
 <!-- STATUS TAB -->
 <div id="tab-status" class="tab active">
+  <div id="setup-banner" style="display:none" class="setup-banner">
+    <h2>👋 欢迎使用 PgFlow</h2>
+    <p>检测到尚未完成初始配置。<br>请打开命令行（终端），运行以下命令完成配置：</p>
+    <div class="cmd-block" id="onboard-cmd" onclick="copyCmd(this)" title="点击复制">加载中…</div>
+    <br><span class="copy-hint">点击命令可复制到剪贴板</span>
+    <br><br>
+    <ol class="setup-steps">
+      <li data-step="1">选择工作目录（直接回车使用默认）</li>
+      <li data-step="2">选择 AI 服务商并填写 API Key</li>
+      <li data-step="3">选择聊天渠道（如 Telegram）</li>
+      <li data-step="4">保存配置</li>
+    </ol>
+    <p>配置完成后，刷新此页面即可查看状态。</p>
+  </div>
   <div class="card">
     <h2>运行状态</h2>
     <div id="status-rows"><div class="empty">加载中…</div></div>
@@ -114,6 +136,14 @@ _HTML = """<!DOCTYPE html>
 
 </main>
 <script>
+function copyCmd(el) {
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const orig = el.innerText;
+    el.innerText = '已复制 ✓';
+    setTimeout(() => { el.innerText = orig; }, 1500);
+  });
+}
+
 function show(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -143,6 +173,18 @@ async function loadStatus() {
   const d = await api('/api/status');
   const sr = document.getElementById('status-rows');
   const wr = document.getElementById('workspace-rows');
+
+  // Show setup banner if not configured
+  const banner = document.getElementById('setup-banner');
+  if (!d.config_exists) {
+    banner.style.display = 'block';
+    // Show the actual exe path so user can copy and run it
+    const cmd = document.getElementById('onboard-cmd');
+    const exe = d.exe_path || 'pgflow';
+    cmd.innerText = `"${exe}" onboard --wizard`;
+  } else {
+    banner.style.display = 'none';
+  }
 
   const configBadge = d.config_exists
     ? `<span class="badge green">已配置</span>`
@@ -241,10 +283,20 @@ def _get_status() -> dict:
     config_path = get_config_path()
     config_exists = config_path.exists()
 
+    # Resolve the exe path so the dashboard can show the correct command
+    import sys
+    if getattr(sys, "frozen", False):
+        exe_path = sys.executable
+    else:
+        import shutil
+        found = shutil.which("pgflow")
+        exe_path = found if found else sys.executable
+
     status: dict = {
         "version": __version__,
         "config_path": str(config_path),
         "config_exists": config_exists,
+        "exe_path": exe_path,
         "model": None,
         "provider": None,
         "api_key_set": False,
