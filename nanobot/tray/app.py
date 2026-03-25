@@ -257,7 +257,7 @@ def _start_gateway_action(icon=None, _item=None) -> None:
     _start_gateway()
 
 
-
+def _restart_gateway(icon=None, _item=None) -> None:
     _log("Restarting gateway…")
     if icon:
         icon.icon = _load_icon("starting")
