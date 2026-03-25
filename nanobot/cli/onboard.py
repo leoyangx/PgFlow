@@ -648,6 +648,63 @@ def _try_auto_fill_context_window(model: BaseModel, new_model_name: str) -> None
         console.print("[dim](i) Could not auto-fill context window (model not in database)[/dim]")
 
 
+# --- Provider → Default Model Sync ---
+
+# Maps provider name to a recommended default model
+_PROVIDER_DEFAULT_MODELS: dict[str, str] = {
+    "deepseek": "deepseek/deepseek-chat",
+    "openrouter": "anthropic/claude-opus-4-5",
+    "aihubmix": "anthropic/claude-opus-4-5",
+    "anthropic": "anthropic/claude-opus-4-5",
+    "openai": "openai/gpt-4o",
+    "gemini": "gemini/gemini-2.0-flash",
+    "siliconflow": "deepseek/deepseek-chat",
+    "volcengine": "deepseek/deepseek-chat",
+    "zhipuai": "zhipuai/glm-4",
+    "dashscope": "dashscope/qwen-max",
+    "moonshot": "moonshot/moonshot-v1-8k",
+    "minimax": "minimax/abab6.5s-chat",
+    "mistral": "mistral/mistral-large-latest",
+    "groq": "groq/llama3-70b-8192",
+}
+
+
+def _prompt_default_model_after_provider(config: Config, provider_name: str) -> None:
+    """After configuring a provider, offer to update the default model."""
+    suggested = _PROVIDER_DEFAULT_MODELS.get(provider_name)
+    current_model = config.agents.defaults.model
+
+    console.print()
+    console.print(f"[bold]默认模型设置[/bold]")
+    console.print(f"[dim]当前默认模型: {current_model}[/dim]")
+
+    choices = []
+    if suggested and suggested != current_model:
+        choices.append(f"使用推荐模型  ({suggested})")
+    choices.append("手动输入模型名称")
+    choices.append("保持不变")
+
+    answer = _get_questionary().select(
+        "是否更新默认使用的 AI 模型?",
+        choices=choices,
+        default="保持不变",
+        qmark=">",
+    ).ask()
+
+    if answer is None or answer == "保持不变":
+        return
+
+    if answer == "手动输入模型名称":
+        provider = provider_name
+        new_model = _input_model_with_autocomplete("输入模型名称", current_model, provider)
+        if new_model:
+            config.agents.defaults.model = new_model
+            console.print(f"[green]✓ 默认模型已设置为: {new_model}[/green]")
+    elif suggested and suggested != current_model:
+        config.agents.defaults.model = suggested
+        console.print(f"[green]✓ 默认模型已设置为: {suggested}[/green]")
+
+
 # --- Provider Configuration ---
 
 
@@ -713,9 +770,9 @@ def _configure_providers(config: Config) -> None:
     while True:
         try:
             console.clear()
-            _show_section_header("LLM Providers", "Select a provider to configure API key and endpoint")
+            _show_section_header("LLM Providers", "选择服务商配置 API Key 和接入地址")
             choices = get_provider_choices()
-            answer = _select_with_back("Select provider:", choices)
+            answer = _select_with_back("选择服务商:", choices)
 
             if answer is _BACK_PRESSED or answer is None or answer == "<- Back":
                 break
@@ -728,10 +785,12 @@ def _configure_providers(config: Config) -> None:
             for name, display in _get_provider_names().items():
                 if display == provider_name:
                     _configure_provider(config, name)
+                    # After configuring a provider, offer to set the default model
+                    _prompt_default_model_after_provider(config, name)
                     break
 
         except KeyboardInterrupt:
-            console.print("\n[dim]Returning to main menu...[/dim]")
+            console.print("\n[dim]返回主菜单...[/dim]")
             break
 
 
@@ -803,8 +862,8 @@ def _configure_channels(config: Config) -> None:
     while True:
         try:
             console.clear()
-            _show_section_header("Chat Channels", "Select a channel to configure connection settings")
-            answer = _select_with_back("Select channel:", choices)
+            _show_section_header("聊天渠道配置", "选择要连接的聊天平台并填写认证信息")
+            answer = _select_with_back("选择渠道:", choices)
 
             if answer is _BACK_PRESSED or answer is None or answer == "<- Back":
                 break
@@ -813,7 +872,7 @@ def _configure_channels(config: Config) -> None:
             assert isinstance(answer, str)
             _configure_channel(config, answer)
         except KeyboardInterrupt:
-            console.print("\n[dim]Returning to main menu...[/dim]")
+            console.print("\n[dim]返回主菜单...[/dim]")
             break
 
 
@@ -933,15 +992,16 @@ def _prompt_workspace(current_workspace: str) -> str | None:
     current_display = current_workspace or default_path
 
     console.print()
-    console.print("[bold]Where should PgFlow store your workspace?[/bold]")
-    console.print(f"[dim]Current: {current_display}[/dim]")
+    console.print("[bold]PgFlow 工作目录设置[/bold]")
+    console.print(f"[dim]工作目录用于存放您的配置、记忆和技能文件[/dim]")
+    console.print(f"[dim]当前路径: {current_display}[/dim]")
     console.print()
 
     choice = _get_questionary().select(
-        "Workspace location:",
+        "选择工作目录:",
         choices=[
-            f"Default  (~/.pgflow/workspace)",
-            "Custom path  (I'll type it)",
+            f"使用默认路径  (~/.pgflow/workspace)  [推荐]",
+            "自定义路径  (手动输入)",
         ],
         qmark=">",
     ).ask()
@@ -949,9 +1009,9 @@ def _prompt_workspace(current_workspace: str) -> str | None:
     if choice is None:
         return None
 
-    if "Custom" in choice:
+    if "自定义" in choice:
         custom = _get_questionary().text(
-            "Enter workspace path:",
+            "请输入工作目录路径:",
             default=current_display,
         ).ask()
         if custom and custom.strip():
@@ -975,19 +1035,19 @@ def _prompt_main_menu_exit(has_unsaved_changes: bool) -> str:
         return "discard"
 
     answer = _get_questionary().select(
-        "You have unsaved changes. What would you like to do?",
+        "您有未保存的更改，请选择操作:",
         choices=[
-            "[S] Save and Exit",
-            "[X] Exit Without Saving",
-            "[R] Resume Editing",
+            "[S] 保存并退出",
+            "[X] 不保存退出",
+            "[R] 继续编辑",
         ],
-        default="[R] Resume Editing",
+        default="[R] 继续编辑",
         qmark=">",
     ).ask()
 
-    if answer == "[S] Save and Exit":
+    if answer == "[S] 保存并退出":
         return "save"
-    if answer == "[X] Exit Without Saving":
+    if answer == "[X] 不保存退出":
         return "discard"
     return "resume"
 
@@ -1027,20 +1087,20 @@ def run_onboard(initial_config: Config | None = None) -> OnboardResult:
         _show_main_menu_header()
 
         try:
-            answer = _get_questionary().select(
-                "What would you like to configure?",
-                choices=[
-                    "[P] LLM Provider",
-                    "[C] Chat Channel",
-                    "[A] Agent Settings",
-                    "[G] Gateway",
-                    "[T] Tools",
-                    "[V] View Configuration Summary",
-                    "[S] Save and Exit",
-                    "[X] Exit Without Saving",
-                ],
-                qmark=">",
-            ).ask()
+        answer = _get_questionary().select(
+            "请选择要配置的项目:",
+            choices=[
+                "[P] AI 服务商  (配置 API Key)",
+                "[C] 聊天渠道  (Telegram / 微信 / QQ 等)",
+                "[A] 智能体设置  (模型 / 温度 / 行为)",
+                "[G] 网关设置  (端口 / 心跳)",
+                "[T] 工具设置  (联网搜索 / 命令执行)",
+                "[V] 查看当前配置摘要",
+                "[S] 保存并退出",
+                "[X] 不保存退出",
+            ],
+            qmark=">",
+        ).ask()
         except KeyboardInterrupt:
             answer = None
 
@@ -1053,17 +1113,17 @@ def run_onboard(initial_config: Config | None = None) -> OnboardResult:
             continue
 
         _MENU_DISPATCH = {
-            "[P] LLM Provider": lambda: _configure_providers(config),
-            "[C] Chat Channel": lambda: _configure_channels(config),
-            "[A] Agent Settings": lambda: _configure_general_settings(config, "Agent Settings"),
-            "[G] Gateway": lambda: _configure_general_settings(config, "Gateway"),
-            "[T] Tools": lambda: _configure_general_settings(config, "Tools"),
-            "[V] View Configuration Summary": lambda: _show_summary(config),
+            "[P] AI 服务商  (配置 API Key)": lambda: _configure_providers(config),
+            "[C] 聊天渠道  (Telegram / 微信 / QQ 等)": lambda: _configure_channels(config),
+            "[A] 智能体设置  (模型 / 温度 / 行为)": lambda: _configure_general_settings(config, "Agent Settings"),
+            "[G] 网关设置  (端口 / 心跳)": lambda: _configure_general_settings(config, "Gateway"),
+            "[T] 工具设置  (联网搜索 / 命令执行)": lambda: _configure_general_settings(config, "Tools"),
+            "[V] 查看当前配置摘要": lambda: _show_summary(config),
         }
 
-        if answer == "[S] Save and Exit":
+        if answer == "[S] 保存并退出":
             return OnboardResult(config=config, should_save=True)
-        if answer == "[X] Exit Without Saving":
+        if answer == "[X] 不保存退出":
             return OnboardResult(config=original_config, should_save=False)
 
         action_fn = _MENU_DISPATCH.get(answer)
