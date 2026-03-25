@@ -249,7 +249,15 @@ def _open_logs(_icon=None, _item=None) -> None:
         _log(f"open logs failed: {e}")
 
 
-def _restart_gateway(icon=None, _item=None) -> None:
+def _start_gateway_action(icon=None, _item=None) -> None:
+    _log("Starting gateway from tray menu…")
+    if icon:
+        icon.icon = _load_icon("starting")
+        icon.title = "PgFlow — 启动中…"
+    _start_gateway()
+
+
+
     _log("Restarting gateway…")
     if icon:
         icon.icon = _load_icon("starting")
@@ -337,6 +345,7 @@ def run_tray() -> None:
             pystray.MenuItem("首次运行 — 请完成配置", None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("打开配置向导", _open_dashboard, default=True),
+            pystray.MenuItem("启动网关", _start_gateway_action),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("退出", _quit_app),
         )
