@@ -16,7 +16,7 @@ DASHBOARD_PORT = 18791
 # HTML template
 # ---------------------------------------------------------------------------
 
-_HTML = """<!DOCTYPE html>
+_HTML = r"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
