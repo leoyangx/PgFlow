@@ -184,6 +184,15 @@ _HTML = r"""<!DOCTYPE html>
     </div>
   </div>
 
+  <div class="card">
+    <h2>运行状态</h2>
+    <div id="status-rows"><div class="empty">加载中…</div></div>
+  </div>
+  <div class="card">
+    <h2>工作区</h2>
+    <div id="workspace-rows"><div class="empty">加载中…</div></div>
+  </div>
+
   <!-- 版本信息 -->
   <div class="card" id="version-card">
     <h2>版本信息</h2>
@@ -199,15 +208,6 @@ _HTML = r"""<!DOCTYPE html>
       <label>新版提示</label>
       <a id="ver-update-link" href="#" target="_blank" class="btn btn-green" style="text-decoration:none;font-size:13px">⬇ 下载新版本</a>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>运行状态</h2>
-    <div id="status-rows"><div class="empty">加载中…</div></div>
-  </div>
-  <div class="card">
-    <h2>工作区</h2>
-    <div id="workspace-rows"><div class="empty">加载中…</div></div>
   </div>
 </div>
 
@@ -813,6 +813,7 @@ async function loadStatus() {
   loadVersionInfo();
 
   const wsExists = d.workspace_exists
+    ? `<span class="badge green">存在</span>`
     : `<span class="badge red">不存在</span>`;
   wr.innerHTML =
     row('工作区路径', `<code class="config-key">${d.workspace}</code>`) +
@@ -1237,6 +1238,12 @@ setInterval(loadGatewayStatus, 8000);  // auto-refresh gateway status every 8s
 _gateway_proc = None
 _gateway_lock = threading.Lock()
 
+# Cached results to avoid blocking the single-threaded HTTP server
+_gateway_cache: dict = {"running": False, "ts": 0.0}
+_version_cache: dict = {"data": None, "ts": 0.0}
+_GATEWAY_CACHE_TTL = 10.0   # seconds
+_VERSION_CACHE_TTL = 300.0  # 5 minutes
+
 
 def _get_exe_path():
     import sys
@@ -1252,29 +1259,50 @@ def _gateway_running() -> bool:
 
     Looks for any pgflow.exe (or pgflow) process whose command line
     contains the word 'gateway'. Works regardless of how it was started.
+    Result is cached for _GATEWAY_CACHE_TTL seconds to avoid blocking.
     """
     import sys
     import subprocess
-    try:
-        if sys.platform == "win32":
-            result = subprocess.run(
-                ["powershell", "-NoProfile", "-Command",
-                 "Get-WmiObject Win32_Process | Where-Object { "
-                 "$_.Name -like 'pgflow*' -and $_.CommandLine -like '*gateway*' "
-                 "} | Measure-Object | Select-Object -ExpandProperty Count"],
-                capture_output=True, text=True, timeout=3,
-                creationflags=0x08000000,
-            )
-            count = result.stdout.strip()
-            return count.isdigit() and int(count) > 0
-        else:
-            result = subprocess.run(
-                ["pgrep", "-f", "pgflow.*gateway"],
-                capture_output=True, timeout=2,
-            )
-            return result.returncode == 0
-    except Exception:
-        return False
+    import time
+
+    now = time.monotonic()
+    if now - _gateway_cache["ts"] < _GATEWAY_CACHE_TTL:
+        return _gateway_cache["running"]
+
+    def _refresh():
+        try:
+            if sys.platform == "win32":
+                result = subprocess.run(
+                    ["powershell", "-NoProfile", "-Command",
+                     "Get-WmiObject Win32_Process | Where-Object { "
+                     "$_.Name -like 'pgflow*' -and $_.CommandLine -like '*gateway*' "
+                     "} | Measure-Object | Select-Object -ExpandProperty Count"],
+                    capture_output=True, text=True, timeout=3,
+                    creationflags=0x08000000,
+                )
+                count = result.stdout.strip()
+                running = count.isdigit() and int(count) > 0
+            else:
+                result = subprocess.run(
+                    ["pgrep", "-f", "pgflow.*gateway"],
+                    capture_output=True, timeout=2,
+                )
+                running = result.returncode == 0
+        except Exception:
+            running = False
+        _gateway_cache["running"] = running
+        _gateway_cache["ts"] = time.monotonic()
+
+    # Run refresh in background thread so the HTTP handler returns immediately
+    # Use the cached (possibly stale) value in the meantime
+    t = threading.Thread(target=_refresh, daemon=True)
+    t.start()
+
+    # If cache is brand new (first call), wait briefly for the result
+    if _gateway_cache["ts"] == 0.0:
+        t.join(timeout=4)
+
+    return _gateway_cache["running"]
 
 
 def _start_gateway_proc() -> None:
@@ -1364,7 +1392,15 @@ def _get_gateway() -> dict:
 
 
 def _get_version_info() -> dict:
-    """Return current version and check GitHub for the latest release."""
+    """Return current version and check GitHub for the latest release.
+    Result is cached for _VERSION_CACHE_TTL seconds to avoid blocking.
+    """
+    import time
+
+    now = time.monotonic()
+    if _version_cache["data"] is not None and now - _version_cache["ts"] < _VERSION_CACHE_TTL:
+        return _version_cache["data"]
+
     from nanobot import __version__
     import urllib.request
     import json as _json
@@ -1375,28 +1411,42 @@ def _get_version_info() -> dict:
         "update_available": False,
         "release_url": "https://github.com/leoyangx/PgFlow/releases/latest",
     }
-    try:
-        req = urllib.request.Request(
-            "https://api.github.com/repos/leoyangx/PgFlow/releases/latest",
-            headers={"User-Agent": "PgFlow-Dashboard"},
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = _json.loads(resp.read())
-        latest_tag = data.get("tag_name", "").lstrip("v")
-        result["latest"] = latest_tag
-        result["release_url"] = data.get("html_url", result["release_url"])
-        if latest_tag and latest_tag != __version__:
-            # Simple tuple comparison for semver
-            def _parse(v):
-                try:
-                    return tuple(int(x) for x in v.split(".")[:3])
-                except Exception:
-                    return (0, 0, 0)
-            if _parse(latest_tag) > _parse(__version__):
-                result["update_available"] = True
-    except Exception:
-        pass  # Offline or GitHub unreachable — silent fail
-    return result
+
+    def _refresh():
+        try:
+            req = urllib.request.Request(
+                "https://leoyangx.github.io/PgFlow/version.json",
+                headers={"User-Agent": "PgFlow-Dashboard"},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            latest_tag = data.get("version", "").lstrip("v")
+            result["latest"] = latest_tag
+            result["release_url"] = data.get("download_url", result["release_url"])
+            if latest_tag and latest_tag != __version__:
+                def _parse(v):
+                    try:
+                        return tuple(int(x) for x in v.split(".")[:3])
+                    except Exception:
+                        return (0, 0, 0)
+                if _parse(latest_tag) > _parse(__version__):
+                    result["update_available"] = True
+        except Exception:
+            pass  # Offline or server unreachable — silent fail
+        _version_cache["data"] = result
+        _version_cache["ts"] = time.monotonic()
+
+    # Run in background; return stale/empty result immediately if cache exists
+    t = threading.Thread(target=_refresh, daemon=True)
+    t.start()
+
+    # On first call, wait briefly so we return something useful
+    if _version_cache["data"] is None:
+        t.join(timeout=6)
+        if _version_cache["data"] is not None:
+            return _version_cache["data"]
+
+    return _version_cache["data"] if _version_cache["data"] is not None else result
 
 
 def _post_gateway(action: str) -> dict:
