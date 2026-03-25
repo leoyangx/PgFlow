@@ -188,6 +188,13 @@ _HTML = r"""<!DOCTYPE html>
     <h2>运行状态</h2>
     <div id="status-rows"><div class="empty">加载中…</div></div>
   </div>
+
+  <!-- 已连接渠道 -->
+  <div class="card">
+    <h2>已启用渠道</h2>
+    <div id="channel-status-rows"><div class="empty">加载中…</div></div>
+  </div>
+
   <div class="card">
     <h2>工作区</h2>
     <div id="workspace-rows"><div class="empty">加载中…</div></div>
@@ -734,7 +741,17 @@ _HTML = r"""<!DOCTYPE html>
   <div class="card">
     <h2>
       <span>运行日志</span>
-      <button class="btn btn-muted" onclick="loadLogs()">↺ 刷新</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">
+          <label class="toggle">
+            <input type="checkbox" id="log-auto-refresh" onchange="onLogAutoRefresh(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          自动刷新
+        </label>
+        <button class="btn btn-muted" onclick="loadLogs()">↺ 刷新</button>
+        <button class="btn btn-muted" onclick="scrollLogsToBottom()">⬇ 跳到底部</button>
+      </div>
     </h2>
     <pre id="log-content">加载中…</pre>
   </div>
@@ -1077,9 +1094,10 @@ async function loadStatus() {
     row('API Key', apiKeyVal) +
     row('当前版本', `<code>${d.version}</code>`);
 
-  // Also refresh gateway + version
+  // Also refresh gateway + version + channel status
   loadGatewayStatus();
   loadVersionInfo();
+  loadChannelStatus(d);
 
   const wsExists = d.workspace_exists
     ? `<span class="badge green">存在</span>`
@@ -1093,6 +1111,33 @@ async function loadStatus() {
 
   // Also refresh gateway status
   loadGatewayStatus();
+}
+
+// ── Channel Status ───────────────────────────────────────────────────────────
+function loadChannelStatus(d) {
+  const el = document.getElementById('channel-status-rows');
+  const CHANNEL_LABELS = {
+    telegram: '✈️ Telegram', discord: '🎮 Discord', slack: '💬 Slack',
+    feishu: '🪶 飞书', dingtalk: '📎 钉钉', qq: '🐧 QQ',
+    wecom: '💼 企业微信', matrix: '🔷 Matrix', whatsapp: '📱 WhatsApp',
+    email: '📧 邮件',
+  };
+  const channels = d.channels_enabled || {};
+  const entries = Object.entries(CHANNEL_LABELS);
+  const enabled = entries.filter(([k]) => channels[k]);
+  const disabled = entries.filter(([k]) => !channels[k]);
+
+  if (enabled.length === 0) {
+    el.innerHTML = '<div class="empty">未启用任何渠道 — 前往「配置」Tab 添加</div>';
+    return;
+  }
+  el.innerHTML =
+    enabled.map(([, label]) =>
+      `<div class="row"><label>${label}</label><span class="badge green">已启用</span></div>`
+    ).join('') +
+    disabled.map(([, label]) =>
+      `<div class="row"><label>${label}</label><span class="badge gray">未启用</span></div>`
+    ).join('');
 }
 
 // ── Gateway Status ──────────────────────────────────────────────────────────
@@ -1590,11 +1635,29 @@ async function saveRawJson() {
 }
 
 // ── Logs ───────────────────────────────────────────────────────────────────
+let _logAutoRefreshTimer = null;
+
 async function loadLogs() {
   const d = await api('/api/logs');
   const el = document.getElementById('log-content');
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
   el.textContent = d.logs || '（暂无日志）';
+  // 仅当用户本来就在底部时才自动滚动，避免打断手动滚动查看
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+function scrollLogsToBottom() {
+  const el = document.getElementById('log-content');
   el.scrollTop = el.scrollHeight;
+}
+
+function onLogAutoRefresh(enabled) {
+  if (_logAutoRefreshTimer) { clearInterval(_logAutoRefreshTimer); _logAutoRefreshTimer = null; }
+  if (enabled) {
+    loadLogs();
+    _logAutoRefreshTimer = setInterval(loadLogs, 3000);
+  }
+}
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
@@ -1756,6 +1819,11 @@ def _get_status() -> dict:
             status["soul_md"] = (ws / "SOUL.md").exists()
             status["user_md"] = (ws / "USER.md").exists()
             status["memory_md"] = (ws / "memory" / "MEMORY.md").exists()
+            # 渠道启用状态
+            channels_cfg = cfg.model_dump(mode="json", by_alias=True).get("channels", {})
+            status["channels_enabled"] = {
+                k: bool(v.get("enabled")) for k, v in channels_cfg.items()
+            }
         except Exception:
             pass
 
