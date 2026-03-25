@@ -1658,7 +1658,6 @@ function onLogAutoRefresh(enabled) {
     _logAutoRefreshTimer = setInterval(loadLogs, 3000);
   }
 }
-}
 
 // ── Init ───────────────────────────────────────────────────────────────────
 loadStatus();
