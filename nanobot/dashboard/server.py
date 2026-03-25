@@ -451,31 +451,46 @@ def _get_exe_path():
 
 
 def _find_gateway_process():
-    """Scan system processes for a running pgflow gateway (any process, any parent)."""
+    """Detect a running gateway by probing its port (18790).
+
+    This is the fastest and most reliable method: if something is listening
+    on port 18790, the gateway is running. No process scanning needed.
+    Falls back to PowerShell for PID lookup (best-effort, non-blocking).
+    """
+    import socket
     import sys
+
+    # Primary: port probe — sub-millisecond, works regardless of how gateway was started
     try:
-        import subprocess
-        if sys.platform == "win32":
-            # wmic is available on all Windows versions we support
-            result = subprocess.run(
-                ["wmic", "process", "get", "ProcessId,CommandLine", "/format:csv"],
-                capture_output=True, text=True, timeout=5,
-            )
-            exe_name = Path(sys.executable).stem.lower() if getattr(sys, "frozen", False) else "pgflow"
-            for line in result.stdout.splitlines():
-                lower = line.lower()
-                if exe_name in lower and "gateway" in lower:
-                    # Extract PID (last field in csv: Node,CommandLine,ProcessId)
-                    parts = line.strip().split(",")
-                    try:
-                        pid = int(parts[-1])
-                        if pid > 0:
-                            return pid
-                    except (ValueError, IndexError):
-                        pass
+        with socket.create_connection(("127.0.0.1", 18790), timeout=0.5):
+            pass
+        # Port is open — gateway is running. Try to get PID (best-effort).
+        return _find_pid_by_port(18790)
+    except (ConnectionRefusedError, OSError):
+        pass
+
+    return None
+
+
+def _find_pid_by_port(port: int) -> int:
+    """Return PID of process listening on given port, or -1 if unknown."""
+    import subprocess, sys
+    if sys.platform != "win32":
+        return -1
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f"(Get-NetTCPConnection -LocalPort {port} -State Listen"
+             f" -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess"],
+            capture_output=True, text=True, timeout=3,
+            creationflags=0x08000000,
+        )
+        line = result.stdout.strip()
+        if line.isdigit():
+            return int(line)
     except Exception:
         pass
-    return None
+    return -1
 
 
 def _gateway_running() -> bool:
