@@ -13,6 +13,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo [1/3b] Installing project in editable mode (required for collect_submodules)...
+python -m pip install -e .
+if errorlevel 1 (
+    echo ERROR: pip install -e . failed.
+    exit /b 1
+)
+
 echo [2/3] Running PyInstaller...
 python -m PyInstaller build\windows\pgflow.spec --clean --noconfirm
 if errorlevel 1 (
