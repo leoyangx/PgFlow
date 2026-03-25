@@ -184,6 +184,23 @@ _HTML = r"""<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- 版本信息 -->
+  <div class="card" id="version-card">
+    <h2>版本信息</h2>
+    <div class="row">
+      <label>当前版本</label>
+      <span id="ver-current"><span class="badge gray">检测中…</span></span>
+    </div>
+    <div class="row">
+      <label>最新版本</label>
+      <span id="ver-latest"><span class="badge gray">检测中…</span></span>
+    </div>
+    <div id="ver-update-row" class="row" style="display:none">
+      <label>新版提示</label>
+      <a id="ver-update-link" href="#" target="_blank" class="btn btn-green" style="text-decoration:none;font-size:13px">⬇ 下载新版本</a>
+    </div>
+  </div>
+
   <div class="card">
     <h2>运行状态</h2>
     <div id="status-rows"><div class="empty">加载中…</div></div>
@@ -789,10 +806,13 @@ async function loadStatus() {
     row('模型', modelVal) +
     row('Provider', providerVal) +
     row('API Key', apiKeyVal) +
-    row('版本', `<code>${d.version}</code>`);
+    row('当前版本', `<code>${d.version}</code>`);
+
+  // Also refresh gateway + version
+  loadGatewayStatus();
+  loadVersionInfo();
 
   const wsExists = d.workspace_exists
-    ? `<span class="badge green">存在</span>`
     : `<span class="badge red">不存在</span>`;
   wr.innerHTML =
     row('工作区路径', `<code class="config-key">${d.workspace}</code>`) +
@@ -817,6 +837,34 @@ async function loadGatewayStatus() {
   } else {
     dot.className     = 'dot red';
     label.textContent = '已停止';
+  }
+}
+
+// ── Version Check ───────────────────────────────────────────────────────────
+async function loadVersionInfo() {
+  try {
+    const d = await api('/api/version');
+    const elCurrent = document.getElementById('ver-current');
+    const elLatest  = document.getElementById('ver-latest');
+    const elRow     = document.getElementById('ver-update-row');
+    const elLink    = document.getElementById('ver-update-link');
+
+    elCurrent.innerHTML = `<code>v${d.current}</code>`;
+
+    if (!d.latest) {
+      elLatest.innerHTML = `<span class="badge gray">无法获取（请检查网络）</span>`;
+    } else if (d.update_available) {
+      elLatest.innerHTML = `<span class="badge amber">v${d.latest} 有新版本</span>`;
+      elLink.href = d.release_url;
+      elLink.textContent = `⬇ 下载 v${d.latest}`;
+      elRow.style.display = 'flex';
+    } else {
+      elLatest.innerHTML = `<span class="badge green">v${d.latest} 已是最新</span>`;
+      elRow.style.display = 'none';
+    }
+  } catch(e) {
+    const elLatest = document.getElementById('ver-latest');
+    if (elLatest) elLatest.innerHTML = `<span class="badge gray">检测失败</span>`;
   }
 }
 
@@ -1315,6 +1363,42 @@ def _get_gateway() -> dict:
     return {"running": _gateway_running()}
 
 
+def _get_version_info() -> dict:
+    """Return current version and check GitHub for the latest release."""
+    from nanobot import __version__
+    import urllib.request
+    import json as _json
+
+    result = {
+        "current": __version__,
+        "latest": None,
+        "update_available": False,
+        "release_url": "https://github.com/leoyangx/PgFlow/releases/latest",
+    }
+    try:
+        req = urllib.request.Request(
+            "https://api.github.com/repos/leoyangx/PgFlow/releases/latest",
+            headers={"User-Agent": "PgFlow-Dashboard"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = _json.loads(resp.read())
+        latest_tag = data.get("tag_name", "").lstrip("v")
+        result["latest"] = latest_tag
+        result["release_url"] = data.get("html_url", result["release_url"])
+        if latest_tag and latest_tag != __version__:
+            # Simple tuple comparison for semver
+            def _parse(v):
+                try:
+                    return tuple(int(x) for x in v.split(".")[:3])
+                except Exception:
+                    return (0, 0, 0)
+            if _parse(latest_tag) > _parse(__version__):
+                result["update_available"] = True
+    except Exception:
+        pass  # Offline or GitHub unreachable — silent fail
+    return result
+
+
 def _post_gateway(action: str) -> dict:
     if action == "start":
         _start_gateway_proc()
@@ -1450,6 +1534,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(_get_status())
         elif path == "/api/gateway":
             self._send_json(_get_gateway())
+        elif path == "/api/version":
+            self._send_json(_get_version_info())
         elif path == "/api/skills":
             self._send_json(_get_skills())
         elif path == "/api/config":
