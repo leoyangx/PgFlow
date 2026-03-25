@@ -26,7 +26,7 @@ _HTML = """<!DOCTYPE html>
   :root {
     --bg: #0f1117; --card: #1a1d2e; --border: #2a2d3e;
     --accent: #4f8ef7; --green: #3ecf8e; --red: #f66; --text: #e2e8f0;
-    --muted: #6b7280; --radius: 10px;
+    --muted: #6b7280; --radius: 10px; --amber: #f59e0b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -39,25 +39,31 @@ _HTML = """<!DOCTYPE html>
   main { padding: 32px; max-width: 960px; margin: 0 auto; }
   .tab { display: none; } .tab.active { display: block; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
-  .card h2 { font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
   .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .row:last-child { border-bottom: none; }
   .row label { color: var(--muted); font-size: 13px; }
-  .row value { font-size: 14px; font-family: monospace; }
   .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
   .badge.green { background: #0d2e1f; color: var(--green); }
   .badge.red { background: #2e0d0d; color: var(--red); }
   .badge.gray { background: #1e2030; color: var(--muted); }
+  .badge.amber { background: #2e1f0d; color: var(--amber); }
   .skill-list { list-style: none; }
   .skill-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .skill-list li:last-child { border-bottom: none; }
   .skill-icon { font-size: 20px; }
   .skill-name { font-size: 14px; font-weight: 500; }
   .skill-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  pre { background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 12px; overflow-x: auto; line-height: 1.6; color: #a8b3cf; white-space: pre-wrap; word-break: break-all; }
+  pre { background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 12px; overflow-x: auto; line-height: 1.6; color: #a8b3cf; white-space: pre-wrap; word-break: break-all; max-height: 500px; overflow-y: auto; }
   .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; }
-  .refresh-btn { float: right; background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; margin-top: -4px; }
-  .refresh-btn:hover { opacity: .85; }
+  .btn { border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-green  { background: #0d5c32; color: var(--green); }
+  .btn-red    { background: #5c1a1a; color: var(--red); }
+  .btn-muted  { background: #2a2d3e; color: var(--muted); }
+  .btn-row { display: flex; gap: 8px; }
   .config-key { color: var(--muted); font-size: 12px; font-family: monospace; }
   .config-val { font-size: 13px; font-family: monospace; word-break: break-all; }
   .setup-banner { background: linear-gradient(135deg, #1a2744 0%, #1a1d2e 100%); border: 1px solid var(--accent); border-radius: var(--radius); padding: 40px 32px; text-align: center; margin-bottom: 20px; }
@@ -69,6 +75,30 @@ _HTML = """<!DOCTYPE html>
   .cmd-block { background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; font-family: monospace; font-size: 14px; color: var(--green); text-align: left; margin: 0 auto 12px; display: inline-block; min-width: 320px; cursor: pointer; }
   .cmd-block:hover { border-color: var(--accent); }
   .copy-hint { font-size: 12px; color: var(--muted); }
+  /* Gateway control */
+  .gateway-status { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.red   { background: var(--red); }
+  .dot.amber { background: var(--amber); }
+  /* Config editor */
+  .editor-wrap { position: relative; }
+  #config-editor { width: 100%; min-height: 320px; background: #0a0c15; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 13px; font-family: monospace; color: #a8b3cf; line-height: 1.6; resize: vertical; outline: none; }
+  #config-editor:focus { border-color: var(--accent); }
+  .editor-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .save-msg { font-size: 13px; margin-left: 8px; }
+  .save-msg.ok  { color: var(--green); }
+  .save-msg.err { color: var(--red); }
+  /* Toggle switch for skills */
+  .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #2a2d3e; border-radius: 20px; cursor: pointer; transition: .2s; }
+  .toggle input:checked + .toggle-slider { background: var(--green); }
+  .toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+  .skill-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .skill-row:last-child { border-bottom: none; }
+  .skill-meta { flex: 1; }
 </style>
 </head>
 <body>
@@ -100,6 +130,30 @@ _HTML = """<!DOCTYPE html>
     </ol>
     <p>配置完成后，刷新此页面即可查看状态。</p>
   </div>
+
+  <!-- Gateway Control -->
+  <div class="card">
+    <h2>
+      <span>网关控制</span>
+      <div class="btn-row">
+        <button class="btn btn-green" id="btn-start" onclick="gatewayAction('start')">▶ 启动</button>
+        <button class="btn btn-red"   id="btn-stop"  onclick="gatewayAction('stop')">■ 停止</button>
+        <button class="btn btn-muted" id="btn-restart" onclick="gatewayAction('restart')">↺ 重启</button>
+      </div>
+    </h2>
+    <div class="row">
+      <label>网关状态</label>
+      <div class="gateway-status">
+        <span class="dot" id="gw-dot"></span>
+        <span id="gw-label">检测中…</span>
+      </div>
+    </div>
+    <div class="row">
+      <label>进程 PID</label>
+      <span id="gw-pid" style="font-family:monospace;font-size:13px">—</span>
+    </div>
+  </div>
+
   <div class="card">
     <h2>运行状态</h2>
     <div id="status-rows"><div class="empty">加载中…</div></div>
@@ -114,28 +168,43 @@ _HTML = """<!DOCTYPE html>
 <div id="tab-skills" class="tab">
   <div class="card">
     <h2>已安装技能</h2>
-    <ul id="skill-list" class="skill-list"><li class="empty">加载中…</li></ul>
+    <div id="skill-list"><div class="empty">加载中…</div></div>
   </div>
 </div>
 
 <!-- CONFIG TAB -->
 <div id="tab-config" class="tab">
   <div class="card">
-    <h2>当前配置 <button class="refresh-btn" onclick="loadConfig()">刷新</button></h2>
-    <div id="config-content"><div class="empty">加载中…</div></div>
+    <h2>
+      <span>编辑配置</span>
+      <button class="btn btn-muted" onclick="loadConfigEditor()">↺ 重新加载</button>
+    </h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">直接编辑 JSON，点击保存后立即写入 config.json 文件。敏感字段（API Key 等）以明文显示，请勿截图分享。</p>
+    <div class="editor-wrap">
+      <textarea id="config-editor" spellcheck="false"></textarea>
+    </div>
+    <div class="editor-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+      <button class="btn btn-muted"   onclick="loadConfigEditor()">取消</button>
+      <span class="save-msg" id="save-msg"></span>
+    </div>
   </div>
 </div>
 
 <!-- LOGS TAB -->
 <div id="tab-logs" class="tab">
   <div class="card">
-    <h2>运行日志 <button class="refresh-btn" onclick="loadLogs()">刷新</button></h2>
+    <h2>
+      <span>运行日志</span>
+      <button class="btn btn-muted" onclick="loadLogs()">↺ 刷新</button>
+    </h2>
     <pre id="log-content">加载中…</pre>
   </div>
 </div>
 
 </main>
 <script>
+// ── Utilities ──────────────────────────────────────────────────────────────
 function copyCmd(el) {
   navigator.clipboard.writeText(el.innerText).then(() => {
     const orig = el.innerText;
@@ -151,8 +220,8 @@ function show(name, btn) {
   btn.classList.add('active');
   if (name === 'status') loadStatus();
   if (name === 'skills') loadSkills();
-  if (name === 'config') loadConfig();
-  if (name === 'logs') loadLogs();
+  if (name === 'config') loadConfigEditor();
+  if (name === 'logs')   loadLogs();
 }
 
 function mask(v) {
@@ -164,21 +233,20 @@ function row(label, val) {
   return `<div class="row"><label>${label}</label><span>${val}</span></div>`;
 }
 
-async function api(path) {
-  const r = await fetch(path);
+async function api(path, opts) {
+  const r = await fetch(path, opts);
   return r.json();
 }
 
+// ── Status ─────────────────────────────────────────────────────────────────
 async function loadStatus() {
   const d = await api('/api/status');
   const sr = document.getElementById('status-rows');
   const wr = document.getElementById('workspace-rows');
 
-  // Show setup banner if not configured
   const banner = document.getElementById('setup-banner');
   if (!d.config_exists) {
     banner.style.display = 'block';
-    // Show the actual exe path so user can copy and run it
     const cmd = document.getElementById('onboard-cmd');
     const exe = d.exe_path || 'pgflow';
     cmd.innerText = `"${exe}" onboard --wizard`;
@@ -189,9 +257,9 @@ async function loadStatus() {
   const configBadge = d.config_exists
     ? `<span class="badge green">已配置</span>`
     : `<span class="badge red">未配置</span>`;
-  const modelVal = d.model ? `<code>${d.model}</code>` : `<span class="badge gray">未设置</span>`;
+  const modelVal    = d.model    ? `<code>${d.model}</code>`    : `<span class="badge gray">未设置</span>`;
   const providerVal = d.provider ? `<code>${d.provider}</code>` : `<span class="badge gray">auto</span>`;
-  const apiKeyVal = d.api_key_set
+  const apiKeyVal   = d.api_key_set
     ? `<span class="badge green">已设置</span>`
     : `<span class="badge red">未设置</span>`;
 
@@ -209,67 +277,213 @@ async function loadStatus() {
   wr.innerHTML =
     row('工作区路径', `<code class="config-key">${d.workspace}</code>`) +
     row('工作区状态', wsExists) +
-    row('SOUL.md', d.soul_md ? '<span class="badge green">存在</span>' : '<span class="badge gray">未创建</span>') +
-    row('USER.md', d.user_md ? '<span class="badge green">存在</span>' : '<span class="badge gray">未创建</span>') +
+    row('SOUL.md',   d.soul_md   ? '<span class="badge green">存在</span>' : '<span class="badge gray">未创建</span>') +
+    row('USER.md',   d.user_md   ? '<span class="badge green">存在</span>' : '<span class="badge gray">未创建</span>') +
     row('MEMORY.md', d.memory_md ? '<span class="badge green">存在</span>' : '<span class="badge gray">未创建</span>');
+
+  // Also refresh gateway status
+  loadGatewayStatus();
 }
 
+// ── Gateway Control ────────────────────────────────────────────────────────
+async function loadGatewayStatus() {
+  const d = await api('/api/gateway');
+  const dot   = document.getElementById('gw-dot');
+  const label = document.getElementById('gw-label');
+  const pid   = document.getElementById('gw-pid');
+  const btnStart   = document.getElementById('btn-start');
+  const btnStop    = document.getElementById('btn-stop');
+  const btnRestart = document.getElementById('btn-restart');
+
+  if (d.running) {
+    dot.className   = 'dot green';
+    label.textContent = '运行中';
+    pid.textContent = d.pid || '—';
+    btnStart.disabled   = true;
+    btnStop.disabled    = false;
+    btnRestart.disabled = false;
+  } else {
+    dot.className   = 'dot red';
+    label.textContent = '已停止';
+    pid.textContent = '—';
+    btnStart.disabled   = false;
+    btnStop.disabled    = true;
+    btnRestart.disabled = true;
+  }
+}
+
+async function gatewayAction(action) {
+  const dot   = document.getElementById('gw-dot');
+  const label = document.getElementById('gw-label');
+  dot.className = 'dot amber';
+  label.textContent = '操作中…';
+  ['btn-start','btn-stop','btn-restart'].forEach(id => {
+    document.getElementById(id).disabled = true;
+  });
+  try {
+    await api('/api/gateway', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action}),
+    });
+  } catch(e) {}
+  // Wait a moment then refresh
+  setTimeout(loadGatewayStatus, 1500);
+}
+
+// ── Skills ─────────────────────────────────────────────────────────────────
 async function loadSkills() {
-  const d = await api('/api/skills');
+  const d  = await api('/api/skills');
   const el = document.getElementById('skill-list');
   if (!d.skills || d.skills.length === 0) {
-    el.innerHTML = '<li><div class="empty">暂无技能 — 在工作区 skills/ 目录下放置 SKILL.md 文件即可添加</div></li>';
+    el.innerHTML = '<div class="empty">暂无技能 — 在工作区 skills/ 目录下放置 SKILL.md 文件即可添加</div>';
     return;
   }
-  el.innerHTML = d.skills.map(s => `
-    <li>
+  el.innerHTML = d.skills.map((s, i) => `
+    <div class="skill-row">
       <span class="skill-icon">${s.icon || '🔧'}</span>
-      <div>
+      <div class="skill-meta">
         <div class="skill-name">${s.name}</div>
         <div class="skill-desc">${s.description || ''}</div>
       </div>
-    </li>
+      <label class="toggle" title="${s.enabled === false ? '启用' : '禁用'}技能">
+        <input type="checkbox" ${s.enabled !== false ? 'checked' : ''}
+               onchange="toggleSkill('${s.name}', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
   `).join('');
 }
 
-async function loadConfig() {
-  const d = await api('/api/config');
-  const el = document.getElementById('config-content');
-  if (!d.config) {
-    el.innerHTML = '<div class="empty">配置文件不存在，请先运行 pgflow onboard</div>';
+async function toggleSkill(name, enabled) {
+  try {
+    await api('/api/skills', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, enabled}),
+    });
+  } catch(e) {
+    // reload to show real state
+    loadSkills();
+  }
+}
+
+// ── Config Editor ──────────────────────────────────────────────────────────
+async function loadConfigEditor() {
+  const ta  = document.getElementById('config-editor');
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '';
+  ta.value = '加载中…';
+  try {
+    const d = await api('/api/config/raw');
+    ta.value = d.raw || '';
+  } catch(e) {
+    ta.value = '读取失败';
+  }
+}
+
+async function saveConfig() {
+  const ta  = document.getElementById('config-editor');
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '';
+
+  // Validate JSON first
+  try {
+    JSON.parse(ta.value);
+  } catch(e) {
+    msg.className = 'save-msg err';
+    msg.textContent = '❌ JSON 格式错误：' + e.message;
     return;
   }
-  // Render as flat key-value rows, masking sensitive fields
-  const sensitive = ['apiKey', 'api_key', 'token', 'secret', 'password'];
-  function renderObj(obj, prefix) {
-    let html = '';
-    for (const [k, v] of Object.entries(obj)) {
-      const fullKey = prefix ? prefix + '.' + k : k;
-      if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-        html += renderObj(v, fullKey);
-      } else {
-        const isSensitive = sensitive.some(s => k.toLowerCase().includes(s.toLowerCase()));
-        let display = v === null || v === '' ? '<span class="masked">未设置</span>' : String(v);
-        if (isSensitive && v) display = `<span class="masked">${mask(String(v))}</span>`;
-        html += row(`<span class="config-key">${fullKey}</span>`, `<span class="config-val">${display}</span>`);
-      }
+
+  try {
+    const r = await api('/api/config/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({raw: ta.value}),
+    });
+    if (r.ok) {
+      msg.className = 'save-msg ok';
+      msg.textContent = '✓ 已保存';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    } else {
+      msg.className = 'save-msg err';
+      msg.textContent = '❌ ' + (r.error || '保存失败');
     }
-    return html;
+  } catch(e) {
+    msg.className = 'save-msg err';
+    msg.textContent = '❌ 网络错误';
   }
-  el.innerHTML = renderObj(d.config, '');
 }
 
+// ── Logs ───────────────────────────────────────────────────────────────────
 async function loadLogs() {
   const d = await api('/api/logs');
-  document.getElementById('log-content').textContent = d.logs || '（暂无日志）';
+  const el = document.getElementById('log-content');
+  el.textContent = d.logs || '（暂无日志）';
+  el.scrollTop = el.scrollHeight;
 }
 
-// Initial load
+// ── Init ───────────────────────────────────────────────────────────────────
 loadStatus();
+setInterval(loadGatewayStatus, 8000);  // auto-refresh gateway status every 8s
 </script>
 </body>
 </html>
 """
+
+
+# ---------------------------------------------------------------------------
+# Gateway process management (shared with tray when running in-process)
+# ---------------------------------------------------------------------------
+
+_gateway_proc = None
+_gateway_lock = threading.Lock()
+
+
+def _get_exe_path():
+    import sys
+    import shutil
+    if getattr(sys, "frozen", False):
+        return str(sys.executable)
+    found = shutil.which("pgflow")
+    return found if found else str(sys.executable)
+
+
+def _gateway_running() -> bool:
+    import subprocess
+    with _gateway_lock:
+        return _gateway_proc is not None and _gateway_proc.poll() is None
+
+
+def _start_gateway_proc() -> None:
+    global _gateway_proc
+    import sys
+    import subprocess
+    with _gateway_lock:
+        if _gateway_proc and _gateway_proc.poll() is None:
+            return
+        exe = _get_exe_path()
+        kwargs: dict = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = 0x08000000
+        try:
+            _gateway_proc = subprocess.Popen([exe, "gateway"], **kwargs)
+        except Exception:
+            pass
+
+
+def _stop_gateway_proc() -> None:
+    global _gateway_proc
+    import subprocess
+    with _gateway_lock:
+        if _gateway_proc and _gateway_proc.poll() is None:
+            _gateway_proc.terminate()
+            try:
+                _gateway_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                _gateway_proc.kill()
+        _gateway_proc = None
 
 
 # ---------------------------------------------------------------------------
@@ -279,12 +493,11 @@ loadStatus();
 def _get_status() -> dict:
     from nanobot import __version__
     from nanobot.config.loader import get_config_path, load_config
+    import sys
 
     config_path = get_config_path()
     config_exists = config_path.exists()
 
-    # Resolve the exe path so the dashboard can show the correct command
-    import sys
     if getattr(sys, "frozen", False):
         exe_path = sys.executable
     else:
@@ -325,26 +538,88 @@ def _get_status() -> dict:
     return status
 
 
+def _get_gateway() -> dict:
+    running = _gateway_running()
+    pid = None
+    with _gateway_lock:
+        if _gateway_proc and _gateway_proc.poll() is None:
+            pid = _gateway_proc.pid
+    return {"running": running, "pid": pid}
+
+
+def _post_gateway(action: str) -> dict:
+    if action == "start":
+        _start_gateway_proc()
+    elif action == "stop":
+        _stop_gateway_proc()
+    elif action == "restart":
+        _stop_gateway_proc()
+        import time
+        time.sleep(0.8)
+        _start_gateway_proc()
+    else:
+        return {"ok": False, "error": f"unknown action: {action}"}
+    return {"ok": True}
+
+
 def _get_skills() -> dict:
     from nanobot.store.skills import list_installed
-
     try:
         skills = list_installed()
     except Exception:
         skills = []
-
     return {"skills": skills}
 
 
+def _post_skills(name: str, enabled: bool) -> dict:
+    """Toggle a skill's enabled state by adding/removing a .disabled marker file."""
+    from nanobot.config.loader import get_config_path, load_config
+    try:
+        cfg = load_config(get_config_path())
+        ws = cfg.workspace_path
+        skill_dir = ws / "skills" / name
+        marker = skill_dir / ".disabled"
+        if enabled:
+            marker.unlink(missing_ok=True)
+        else:
+            skill_dir.mkdir(parents=True, exist_ok=True)
+            marker.touch()
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _get_config_raw() -> dict:
+    from nanobot.config.loader import get_config_path
+    config_path = get_config_path()
+    if not config_path.exists():
+        return {"raw": ""}
+    try:
+        return {"raw": config_path.read_text(encoding="utf-8")}
+    except Exception as e:
+        return {"raw": "", "error": str(e)}
+
+
+def _save_config(raw: str) -> dict:
+    from nanobot.config.loader import get_config_path
+    config_path = get_config_path()
+    try:
+        # Validate JSON
+        json.loads(raw)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(raw, encoding="utf-8")
+        return {"ok": True}
+    except json.JSONDecodeError as e:
+        return {"ok": False, "error": f"JSON 格式错误: {e}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 def _get_config() -> dict:
     from nanobot.config.loader import get_config_path, load_config
-
     config_path = get_config_path()
     if not config_path.exists():
         return {"config": None}
-
     try:
         cfg = load_config(config_path)
         return {"config": cfg.model_dump(mode="json", by_alias=True)}
@@ -354,19 +629,17 @@ def _get_config() -> dict:
 
 def _get_logs() -> dict:
     from nanobot.config.paths import get_logs_dir
-
     logs_dir = get_logs_dir()
     lines: list[str] = []
     try:
         log_files = sorted(logs_dir.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
         if log_files:
             content = log_files[0].read_text(encoding="utf-8", errors="replace")
-            lines = content.splitlines()[-200:]  # last 200 lines
+            lines = content.splitlines()[-300:]
         else:
             lines = ["（日志目录为空）"]
     except Exception:
         lines = ["（无法读取日志）"]
-
     return {"logs": "\n".join(lines)}
 
 
@@ -375,7 +648,7 @@ def _get_logs() -> dict:
 # ---------------------------------------------------------------------------
 
 class _Handler(BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args):  # silence default access log
+    def log_message(self, fmt, *args):
         pass
 
     def _send_json(self, data: dict, status: int = 200) -> None:
@@ -395,19 +668,45 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_body(self) -> dict:
+        length = int(self.headers.get("Content-Length", 0))
+        if length:
+            return json.loads(self.rfile.read(length))
+        return {}
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path
-
         if path in ("/", "/index.html"):
             self._send_html(_HTML)
         elif path == "/api/status":
             self._send_json(_get_status())
+        elif path == "/api/gateway":
+            self._send_json(_get_gateway())
         elif path == "/api/skills":
             self._send_json(_get_skills())
         elif path == "/api/config":
             self._send_json(_get_config())
+        elif path == "/api/config/raw":
+            self._send_json(_get_config_raw())
         elif path == "/api/logs":
             self._send_json(_get_logs())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self) -> None:
+        path = urlparse(self.path).path
+        try:
+            body = self._read_body()
+        except Exception:
+            body = {}
+
+        if path == "/api/gateway":
+            self._send_json(_post_gateway(body.get("action", "")))
+        elif path == "/api/skills":
+            self._send_json(_post_skills(body.get("name", ""), body.get("enabled", True)))
+        elif path == "/api/config/save":
+            self._send_json(_save_config(body.get("raw", "")))
         else:
             self.send_response(404)
             self.end_headers()
@@ -418,10 +717,7 @@ class _Handler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 
 def start_dashboard(port: int = DASHBOARD_PORT, open_browser: bool = True) -> HTTPServer:
-    """Start the dashboard HTTP server in a background daemon thread.
-
-    Returns the HTTPServer instance (call .shutdown() to stop).
-    """
+    """Start the dashboard HTTP server in a background daemon thread."""
     server = HTTPServer(("127.0.0.1", port), _Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
