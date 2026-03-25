@@ -413,16 +413,32 @@ def _get_exe_path():
 
 
 def _gateway_running() -> bool:
-    """Detect a running gateway by probing its port (18790).
+    """Detect a running gateway process by scanning running processes.
 
-    Port probe is sub-millisecond and works regardless of how the gateway
-    was started (tray, CLI, or any other means).
+    Looks for any pgflow.exe (or pgflow) process whose command line
+    contains the word 'gateway'. Works regardless of how it was started.
     """
-    import socket
+    import sys
+    import subprocess
     try:
-        with socket.create_connection(("127.0.0.1", 18790), timeout=0.5):
-            return True
-    except (ConnectionRefusedError, OSError):
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Get-WmiObject Win32_Process | Where-Object { "
+                 "$_.Name -like 'pgflow*' -and $_.CommandLine -like '*gateway*' "
+                 "} | Measure-Object | Select-Object -ExpandProperty Count"],
+                capture_output=True, text=True, timeout=3,
+                creationflags=0x08000000,
+            )
+            count = result.stdout.strip()
+            return count.isdigit() and int(count) > 0
+        else:
+            result = subprocess.run(
+                ["pgrep", "-f", "pgflow.*gateway"],
+                capture_output=True, timeout=2,
+            )
+            return result.returncode == 0
+    except Exception:
         return False
 
 
