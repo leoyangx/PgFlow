@@ -5,9 +5,14 @@
 import sys
 import litellm
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_submodules
 
 ROOT = Path(SPECPATH).parent.parent  # repo root
 LITELLM_DIR = Path(litellm.__file__).parent
+
+# Collect ALL nanobot submodules so nothing is missed
+sys.path.insert(0, str(ROOT))
+nanobot_all = collect_submodules("nanobot")
 
 a = Analysis(
     [str(ROOT / "nanobot" / "__main__.py")],
@@ -25,33 +30,7 @@ a = Analysis(
         # Project logo for tray icon
         (str(ROOT / "nanobot_logo.png"), "."),
     ],
-    hiddenimports=[
-        # Channels
-        "nanobot.channels.telegram",
-        "nanobot.channels.discord",
-        "nanobot.channels.slack",
-        "nanobot.channels.dingtalk",
-        "nanobot.channels.feishu",
-        "nanobot.channels.qq",
-        "nanobot.channels.wecom",
-        "nanobot.channels.weixin",
-        "nanobot.channels.whatsapp",
-        "nanobot.channels.email",
-        "nanobot.channels.matrix",
-        "nanobot.channels.mochat",
-        # Providers
-        "nanobot.providers.litellm_provider",
-        "nanobot.providers.custom_provider",
-        "nanobot.providers.azure_openai_provider",
-        "nanobot.providers.openai_codex_provider",
-        # Store & Dashboard & Service & Tray
-        "nanobot.store.skills",
-        "nanobot.dashboard.server",
-        "nanobot.service.manager",
-        "nanobot.tray.app",
-        "nanobot.cli.onboard",
-        "nanobot.cli.models",
-        "nanobot.cli.stream",
+    hiddenimports=nanobot_all + [
         # Deps that PyInstaller misses
         "tiktoken_ext.openai_public",
         "tiktoken_ext",
