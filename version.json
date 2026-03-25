@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
-  "download_url": "https://github.com/leoyangx/PgFlow/releases/download/v0.1.0/pgflow-v0.1.0-windows.zip",
-  "release_notes": "首个正式版本"
+  "version": "0.1.1",
+  "download_url": "https://github.com/leoyangx/PgFlow/releases/download/v0.1.1/pgflow-v0.1.1-windows.zip",
+  "release_notes": "深度完善面板配置页，补全所有聊天渠道，修复 API 配置字段"
 }

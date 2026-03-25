@@ -228,16 +228,16 @@ _HTML = r"""<!DOCTYPE html>
     <div class="form-group">
       <label class="form-label">服务商</label>
       <select id="cfg-provider" class="form-select" onchange="onProviderChange()">
-        <option value="openrouter">OpenRouter（推荐，支持所有主流模型）</option>
+        <option value="openrouter">OpenRouter（推荐，支持 Claude/GPT/Gemini 等所有模型）</option>
+        <option value="deepseek">DeepSeek（国内直连，价格极低）</option>
+        <option value="siliconflow">硅基流动 SiliconFlow（国内，有免费额度）</option>
+        <option value="zhipu">智谱 AI（GLM 系列，国内直连）</option>
+        <option value="dashscope">阿里云百炼 DashScope（Qwen 系列）</option>
+        <option value="moonshot">Moonshot 月之暗面</option>
+        <option value="volcengine">火山引擎（豆包）</option>
         <option value="anthropic">Anthropic（Claude 官方）</option>
         <option value="openai">OpenAI（GPT 系列）</option>
-        <option value="deepseek">DeepSeek</option>
         <option value="gemini">Google Gemini</option>
-        <option value="zhipu">智谱 AI</option>
-        <option value="dashscope">阿里云百炼（DashScope）</option>
-        <option value="siliconflow">硅基流动（SiliconFlow）</option>
-        <option value="volcengine">火山引擎</option>
-        <option value="moonshot">Moonshot（月之暗面）</option>
         <option value="groq">Groq</option>
         <option value="custom">自定义（OpenAI 兼容接口）</option>
       </select>
@@ -249,20 +249,21 @@ _HTML = r"""<!DOCTYPE html>
         <button class="eye-btn" onclick="toggleEye('cfg-apikey', this)" title="显示/隐藏">👁</button>
       </div>
     </div>
-    <div class="form-group" id="custom-base-group" style="display:none">
-      <label class="form-label">API Base URL <span class="form-hint">自定义接口地址</span></label>
+    <div class="form-group" id="apibase-group" style="display:none">
+      <label class="form-label">API Base URL <span class="form-hint" id="apibase-hint"></span></label>
       <input id="cfg-apibase" type="text" class="form-input" placeholder="https://api.example.com/v1">
     </div>
     <div class="form-group">
-      <label class="form-label">模型 <span class="form-hint">格式：provider/model-name</span></label>
-      <input id="cfg-model" type="text" class="form-input" placeholder="anthropic/claude-opus-4-5">
+      <label class="form-label">模型名称 <span class="form-hint">只填模型名，例如 deepseek-chat，不要填 URL</span></label>
+      <input id="cfg-model" type="text" class="form-input" placeholder="选择服务商后自动填入推荐模型">
+      <div id="model-hint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
     </div>
   </div>
 
   <!-- 区块②：聊天渠道 -->
   <div class="card">
     <h2>聊天渠道</h2>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">启用开关后填写对应凭据，保存即生效。</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">启用开关后填写对应凭据，保存并重启服务即生效。</p>
 
     <!-- Telegram -->
     <div class="channel-block" id="ch-telegram">
@@ -276,6 +277,7 @@ _HTML = r"""<!DOCTYPE html>
         <span class="channel-arrow" id="ch-telegram-arrow">▶</span>
       </div>
       <div class="channel-body" id="ch-telegram-body" style="display:none">
+        <div class="doc-tip" style="margin-bottom:12px">向 <strong>@BotFather</strong> 发送 /newbot 创建机器人，获取 Token。向 <strong>@userinfobot</strong> 获取你的用户 ID。</div>
         <div class="form-group">
           <label class="form-label">Bot Token <span class="form-hint">向 @BotFather 获取</span></label>
           <div class="input-eye">
@@ -284,7 +286,7 @@ _HTML = r"""<!DOCTYPE html>
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔，留空拒绝所有人，填 * 允许所有人</span></label>
+          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔；留空拒绝所有人；填 * 允许所有人</span></label>
           <input id="ch-telegram-allow" type="text" class="form-input" placeholder="123456789, 987654321">
         </div>
       </div>
@@ -302,6 +304,7 @@ _HTML = r"""<!DOCTYPE html>
         <span class="channel-arrow" id="ch-discord-arrow">▶</span>
       </div>
       <div class="channel-body" id="ch-discord-body" style="display:none">
+        <div class="doc-tip" style="margin-bottom:12px">在 Discord 开发者平台创建应用，启用 <strong>Message Content Intent</strong> 权限，复制 Bot Token。</div>
         <div class="form-group">
           <label class="form-label">Bot Token</label>
           <div class="input-eye">
@@ -345,11 +348,11 @@ _HTML = r"""<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Feishu -->
+    <!-- 飞书 -->
     <div class="channel-block" id="ch-feishu">
       <div class="channel-header" onclick="toggleChannel('feishu')">
         <span class="channel-icon">🪶</span>
-        <span class="channel-name">飞书 (Feishu)</span>
+        <span class="channel-name">飞书 Feishu</span>
         <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
           <input type="checkbox" id="ch-feishu-enabled" onchange="onChannelToggle('feishu', this.checked)">
           <span class="toggle-slider"></span>
@@ -371,11 +374,277 @@ _HTML = r"""<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Email -->
+    <!-- 钉钉 -->
+    <div class="channel-block" id="ch-dingtalk">
+      <div class="channel-header" onclick="toggleChannel('dingtalk')">
+        <span class="channel-icon">📎</span>
+        <span class="channel-name">钉钉 DingTalk</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-dingtalk-enabled" onchange="onChannelToggle('dingtalk', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-dingtalk-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-dingtalk-body" style="display:none">
+        <div class="doc-tip" style="margin-bottom:12px">在钉钉开放平台创建企业内部应用，获取 Client ID 和 Client Secret。</div>
+        <div class="form-group">
+          <label class="form-label">Client ID <span class="form-hint">即 App Key</span></label>
+          <input id="ch-dingtalk-clientid" type="text" class="form-input" placeholder="ding...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Secret <span class="form-hint">即 App Secret</span></label>
+          <div class="input-eye">
+            <input id="ch-dingtalk-secret" type="password" class="form-input" placeholder="Client Secret">
+            <button class="eye-btn" onclick="toggleEye('ch-dingtalk-secret', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QQ -->
+    <div class="channel-block" id="ch-qq">
+      <div class="channel-header" onclick="toggleChannel('qq')">
+        <span class="channel-icon">🐧</span>
+        <span class="channel-name">QQ</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-qq-enabled" onchange="onChannelToggle('qq', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-qq-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-qq-body" style="display:none">
+        <div class="doc-tip" style="margin-bottom:12px">在 QQ 开放平台注册机器人，获取 App ID 和 App Secret。</div>
+        <div class="form-group">
+          <label class="form-label">App ID</label>
+          <input id="ch-qq-appid" type="text" class="form-input" placeholder="你的 QQ App ID">
+        </div>
+        <div class="form-group">
+          <label class="form-label">App Secret</label>
+          <div class="input-eye">
+            <input id="ch-qq-secret" type="password" class="form-input" placeholder="你的 QQ App Secret">
+            <button class="eye-btn" onclick="toggleEye('ch-qq-secret', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 企业微信 -->
+    <div class="channel-block" id="ch-wecom">
+      <div class="channel-header" onclick="toggleChannel('wecom')">
+        <span class="channel-icon">💼</span>
+        <span class="channel-name">企业微信 Wecom</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-wecom-enabled" onchange="onChannelToggle('wecom', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-wecom-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-wecom-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Corp ID <span class="form-hint">企业 ID</span></label>
+          <input id="ch-wecom-corpid" type="text" class="form-input" placeholder="ww...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Corp Secret</label>
+          <div class="input-eye">
+            <input id="ch-wecom-secret" type="password" class="form-input" placeholder="Corp Secret">
+            <button class="eye-btn" onclick="toggleEye('ch-wecom-secret', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Agent ID</label>
+          <input id="ch-wecom-agentid" type="text" class="form-input" placeholder="1000001">
+        </div>
+      </div>
+    </div>
+
+    <!-- Matrix -->
+    <div class="channel-block" id="ch-matrix">
+      <div class="channel-header" onclick="toggleChannel('matrix')">
+        <span class="channel-icon">🔷</span>
+        <span class="channel-name">Matrix</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-matrix-enabled" onchange="onChannelToggle('matrix', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-matrix-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-matrix-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Homeserver URL</label>
+          <input id="ch-matrix-homeserver" type="text" class="form-input" placeholder="https://matrix.org">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Access Token</label>
+          <div class="input-eye">
+            <input id="ch-matrix-token" type="password" class="form-input" placeholder="syt_...">
+            <button class="eye-btn" onclick="toggleEye('ch-matrix-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp -->
+    <div class="channel-block" id="ch-whatsapp">
+      <div class="channel-header" onclick="toggleChannel('whatsapp')">
+        <span class="channel-icon">📱</span>
+        <span class="channel-name">WhatsApp</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-whatsapp-enabled" onchange="onChannelToggle('whatsapp', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-whatsapp-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-whatsapp-body" style="display:none">
+        <div class="doc-warn" style="margin-bottom:12px">⚠️ WhatsApp 渠道需要安装 Node.js 并运行桥接服务，详见文档「WhatsApp」章节。</div>
+        <div class="form-group">
+          <label class="form-label">Bridge URL <span class="form-hint">本地桥接服务地址</span></label>
+          <input id="ch-whatsapp-url" type="text" class="form-input" placeholder="http://localhost:3000">
+        </div>
+      </div>
+    </div>
+
+    <!-- 邮件 -->
     <div class="channel-block" id="ch-email">
       <div class="channel-header" onclick="toggleChannel('email')">
         <span class="channel-icon">📧</span>
-        <span class="channel-name">邮件 (Email)</span>
+        <span class="channel-name">邮件 Email</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-email-enabled" onchange="onChannelToggle('email', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-email-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-email-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">IMAP 服务器</label>
+          <input id="ch-email-imap" type="text" class="form-input" placeholder="imap.gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SMTP 服务器</label>
+          <input id="ch-email-smtp" type="text" class="form-input" placeholder="smtp.gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱地址</label>
+          <input id="ch-email-addr" type="text" class="form-input" placeholder="you@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码 / 授权码</label>
+          <div class="input-eye">
+            <input id="ch-email-pass" type="password" class="form-input" placeholder="应用专用密码">
+            <button class="eye-btn" onclick="toggleEye('ch-email-pass', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-telegram-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-telegram-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Bot Token <span class="form-hint">向 @BotFather 获取</span></label>
+          <div class="input-eye">
+            <input id="ch-telegram-token" type="password" class="form-input" placeholder="123456:ABC-DEF...">
+            <button class="eye-btn" onclick="toggleEye('ch-telegram-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔，留空拒绝所有人，填 * 允许所有人</span></label>
+          <input id="ch-telegram-allow" type="text" class="form-input" placeholder="123456789, 987654321">
+        </div>
+      </div>
+    </div>
+
+    <!-- Discord -->
+    <div class="channel-block" id="ch-discord">
+      <div class="channel-header" onclick="toggleChannel('discord')">
+        <span class="channel-icon">🎮</span>
+        <span class="channel-name">Discord</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-discord-enabled" onchange="onChannelToggle('discord', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-discord-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-discord-body" style="display:none">
+        <div class="doc-tip" style="margin-bottom:12px">在 Discord 开发者平台创建应用，启用 <strong>Message Content Intent</strong> 权限，复制 Bot Token。</div>
+        <div class="form-group">
+          <label class="form-label">Bot Token</label>
+          <div class="input-eye">
+            <input id="ch-discord-token" type="password" class="form-input" placeholder="你的 Discord Bot Token">
+            <button class="eye-btn" onclick="toggleEye('ch-discord-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔</span></label>
+          <input id="ch-discord-allow" type="text" class="form-input" placeholder="123456789">
+        </div>
+      </div>
+    </div>
+
+    <!-- Slack -->
+    <div class="channel-block" id="ch-slack">
+      <div class="channel-header" onclick="toggleChannel('slack')">
+        <span class="channel-icon">💬</span>
+        <span class="channel-name">Slack</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-slack-enabled" onchange="onChannelToggle('slack', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-slack-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-slack-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Bot Token <span class="form-hint">xoxb- 开头</span></label>
+          <div class="input-eye">
+            <input id="ch-slack-token" type="password" class="form-input" placeholder="xoxb-...">
+            <button class="eye-btn" onclick="toggleEye('ch-slack-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">App-Level Token <span class="form-hint">xapp- 开头</span></label>
+          <div class="input-eye">
+            <input id="ch-slack-apptoken" type="password" class="form-input" placeholder="xapp-...">
+            <button class="eye-btn" onclick="toggleEye('ch-slack-apptoken', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 飞书 -->
+    <div class="channel-block" id="ch-feishu">
+      <div class="channel-header" onclick="toggleChannel('feishu')">
+        <span class="channel-icon">🪶</span>
+        <span class="channel-name">飞书 Feishu</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-feishu-enabled" onchange="onChannelToggle('feishu', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-feishu-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-feishu-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">App ID</label>
+          <input id="ch-feishu-appid" type="text" class="form-input" placeholder="cli_...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">App Secret</label>
+          <div class="input-eye">
+            <input id="ch-feishu-secret" type="password" class="form-input" placeholder="App Secret">
+            <button class="eye-btn" onclick="toggleEye('ch-feishu-secret', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 邮件 -->
+    <div class="channel-block" id="ch-email">
+      <div class="channel-header" onclick="toggleChannel('email')">
+        <span class="channel-icon">📧</span>
+        <span class="channel-name">邮件 Email</span>
         <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
           <input type="checkbox" id="ch-email-enabled" onchange="onChannelToggle('email', this.checked)">
           <span class="toggle-slider"></span>
@@ -934,10 +1203,45 @@ function toggleEye(id, btn) {
   btn.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 
+// 服务商预设：apiBase + 默认模型
+const PROVIDER_PRESETS = {
+  openrouter:   { base: '',                                  model: 'anthropic/claude-opus-4-5',  needBase: false },
+  deepseek:     { base: 'https://api.deepseek.com/v1',       model: 'deepseek-chat',              needBase: true  },
+  siliconflow:  { base: 'https://api.siliconflow.cn/v1',     model: 'deepseek-ai/DeepSeek-V3',    needBase: true  },
+  zhipu:        { base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash',             needBase: true  },
+  dashscope:    { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', needBase: true  },
+  moonshot:     { base: 'https://api.moonshot.cn/v1',        model: 'moonshot-v1-8k',             needBase: true  },
+  volcengine:   { base: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-pro-32k',      needBase: true  },
+  anthropic:    { base: '',                                  model: 'claude-opus-4-5',             needBase: false },
+  openai:       { base: '',                                  model: 'gpt-4o',                     needBase: false },
+  gemini:       { base: '',                                  model: 'gemini/gemini-2.0-flash',    needBase: false },
+  groq:         { base: '',                                  model: 'groq/llama-3.3-70b-versatile', needBase: false },
+  custom:       { base: '',                                  model: '',                           needBase: true  },
+};
+
 // 自定义接口时显示 Base URL 输入框
 function onProviderChange() {
   const v = document.getElementById('cfg-provider').value;
-  document.getElementById('custom-base-group').style.display = v === 'custom' ? 'block' : 'none';
+  const preset = PROVIDER_PRESETS[v] || {};
+  const baseGroup = document.getElementById('apibase-group');
+  const baseHint  = document.getElementById('apibase-hint');
+  const baseInput = document.getElementById('cfg-apibase');
+  const modelInput = document.getElementById('cfg-model');
+  const modelHint  = document.getElementById('model-hint');
+
+  if (preset.needBase) {
+    baseGroup.style.display = 'block';
+    baseHint.textContent = v === 'custom' ? '自定义接口地址' : '已预填，可按需修改';
+    if (!baseInput.value && preset.base) baseInput.value = preset.base;
+  } else {
+    baseGroup.style.display = 'none';
+  }
+
+  // 仅在模型为空或为旧预设时自动填入
+  if (preset.model && !modelInput.value) {
+    modelInput.value = preset.model;
+  }
+  modelHint.textContent = preset.model ? `推荐模型：${preset.model}` : '';
 }
 
 // 高级设置折叠
@@ -996,7 +1300,8 @@ function fillForm(cfg) {
   document.getElementById('cfg-apikey').value   = activeApiKey;
   document.getElementById('cfg-apibase').value  = activeApiBase;
   document.getElementById('cfg-model').value    = agentDef.model || '';
-  document.getElementById('custom-base-group').style.display = activeProvider === 'custom' ? 'block' : 'none';
+  // 触发服务商切换逻辑（显示/隐藏 apiBase，填推荐模型提示）
+  onProviderChange();
 
   // ② 渠道
   const channels = cfg.channels || {};
@@ -1027,6 +1332,31 @@ function fillForm(cfg) {
     document.getElementById('ch-feishu-enabled').checked  = !!c.enabled;
     document.getElementById('ch-feishu-appid').value      = c.appId || '';
     document.getElementById('ch-feishu-secret').value     = c.appSecret || ''; }
+  // dingtalk
+  { const c = channels.dingtalk || {};
+    document.getElementById('ch-dingtalk-enabled').checked   = !!c.enabled;
+    document.getElementById('ch-dingtalk-clientid').value    = c.clientId || '';
+    document.getElementById('ch-dingtalk-secret').value      = c.clientSecret || ''; }
+  // qq
+  { const c = channels.qq || {};
+    document.getElementById('ch-qq-enabled').checked  = !!c.enabled;
+    document.getElementById('ch-qq-appid').value      = c.appId || '';
+    document.getElementById('ch-qq-secret').value     = c.appSecret || ''; }
+  // wecom
+  { const c = channels.wecom || {};
+    document.getElementById('ch-wecom-enabled').checked   = !!c.enabled;
+    document.getElementById('ch-wecom-corpid').value      = c.corpId || '';
+    document.getElementById('ch-wecom-secret').value      = c.corpSecret || '';
+    document.getElementById('ch-wecom-agentid').value     = c.agentId || ''; }
+  // matrix
+  { const c = channels.matrix || {};
+    document.getElementById('ch-matrix-enabled').checked     = !!c.enabled;
+    document.getElementById('ch-matrix-homeserver').value    = c.homeserver || '';
+    document.getElementById('ch-matrix-token').value         = c.accessToken || ''; }
+  // whatsapp
+  { const c = channels.whatsapp || {};
+    document.getElementById('ch-whatsapp-enabled').checked  = !!c.enabled;
+    document.getElementById('ch-whatsapp-url').value        = c.bridgeUrl || ''; }
   // email
   { const c = channels.email || {};
     document.getElementById('ch-email-enabled').checked   = !!c.enabled;
@@ -1058,13 +1388,18 @@ function collectForm(cfg) {
     'zhipu','dashscope','siliconflow','volcengine','moonshot','groq','custom'];
   for (const name of knownProviders) {
     if (cfg.providers[name] && cfg.providers[name].apiKey && name !== provider) {
-      // 只置空 apiKey，保留其他字段
       cfg.providers[name].apiKey = '';
     }
   }
   if (!cfg.providers[provider]) cfg.providers[provider] = {};
   cfg.providers[provider].apiKey = apiKey;
-  if (provider === 'custom' && apiBase) cfg.providers[provider].apiBase = apiBase;
+  // 保存 apiBase（国内服务商直连必须有）
+  const preset = PROVIDER_PRESETS[provider] || {};
+  if (preset.needBase) {
+    cfg.providers[provider].apiBase = apiBase || preset.base || '';
+  } else {
+    delete cfg.providers[provider].apiBase;
+  }
 
   if (!cfg.agents) cfg.agents = {};
   if (!cfg.agents.defaults) cfg.agents.defaults = {};
@@ -1104,6 +1439,46 @@ function collectForm(cfg) {
     cfg.channels.feishu.enabled = enabled;
     if (appId)  cfg.channels.feishu.appId     = appId;
     if (secret) cfg.channels.feishu.appSecret = secret; }
+  // dingtalk
+  { const enabled   = document.getElementById('ch-dingtalk-enabled').checked;
+    const clientId  = document.getElementById('ch-dingtalk-clientid').value.trim();
+    const secret    = document.getElementById('ch-dingtalk-secret').value.trim();
+    if (!cfg.channels.dingtalk) cfg.channels.dingtalk = {};
+    cfg.channels.dingtalk.enabled = enabled;
+    if (clientId) cfg.channels.dingtalk.clientId     = clientId;
+    if (secret)   cfg.channels.dingtalk.clientSecret = secret; }
+  // qq
+  { const enabled = document.getElementById('ch-qq-enabled').checked;
+    const appId   = document.getElementById('ch-qq-appid').value.trim();
+    const secret  = document.getElementById('ch-qq-secret').value.trim();
+    if (!cfg.channels.qq) cfg.channels.qq = {};
+    cfg.channels.qq.enabled = enabled;
+    if (appId)  cfg.channels.qq.appId     = appId;
+    if (secret) cfg.channels.qq.appSecret = secret; }
+  // wecom
+  { const enabled  = document.getElementById('ch-wecom-enabled').checked;
+    const corpId   = document.getElementById('ch-wecom-corpid').value.trim();
+    const secret   = document.getElementById('ch-wecom-secret').value.trim();
+    const agentId  = document.getElementById('ch-wecom-agentid').value.trim();
+    if (!cfg.channels.wecom) cfg.channels.wecom = {};
+    cfg.channels.wecom.enabled = enabled;
+    if (corpId)  cfg.channels.wecom.corpId     = corpId;
+    if (secret)  cfg.channels.wecom.corpSecret = secret;
+    if (agentId) cfg.channels.wecom.agentId    = agentId; }
+  // matrix
+  { const enabled    = document.getElementById('ch-matrix-enabled').checked;
+    const homeserver = document.getElementById('ch-matrix-homeserver').value.trim();
+    const token      = document.getElementById('ch-matrix-token').value.trim();
+    if (!cfg.channels.matrix) cfg.channels.matrix = {};
+    cfg.channels.matrix.enabled = enabled;
+    if (homeserver) cfg.channels.matrix.homeserver   = homeserver;
+    if (token)      cfg.channels.matrix.accessToken  = token; }
+  // whatsapp
+  { const enabled = document.getElementById('ch-whatsapp-enabled').checked;
+    const url     = document.getElementById('ch-whatsapp-url').value.trim();
+    if (!cfg.channels.whatsapp) cfg.channels.whatsapp = {};
+    cfg.channels.whatsapp.enabled = enabled;
+    if (url) cfg.channels.whatsapp.bridgeUrl = url; }
   // email
   { const enabled = document.getElementById('ch-email-enabled').checked;
     const imap    = document.getElementById('ch-email-imap').value.trim();
