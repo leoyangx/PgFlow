@@ -89,6 +89,27 @@ _HTML = """<!DOCTYPE html>
   .save-msg { font-size: 13px; margin-left: 8px; }
   .save-msg.ok  { color: var(--green); }
   .save-msg.err { color: var(--red); }
+  /* Form controls */
+  .form-group { margin-bottom: 16px; }
+  .form-group:last-child { margin-bottom: 0; }
+  .form-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .form-hint { font-size: 11px; color: #4b5563; margin-left: 6px; }
+  .form-input { width: 100%; background: #0a0c15; border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; transition: border-color .15s; }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select { width: 100%; background: #0a0c15; border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 13px; color: var(--text); outline: none; cursor: pointer; transition: border-color .15s; }
+  .form-select:focus { border-color: var(--accent); }
+  .input-eye { position: relative; }
+  .input-eye .form-input { padding-right: 40px; }
+  .eye-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: var(--muted); padding: 4px; line-height: 1; }
+  /* Channel blocks */
+  .channel-block { border-bottom: 1px solid var(--border); }
+  .channel-block:last-child { border-bottom: none; }
+  .channel-header { display: flex; align-items: center; gap: 10px; padding: 12px 0; cursor: pointer; user-select: none; }
+  .channel-icon { font-size: 18px; width: 28px; text-align: center; }
+  .channel-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .channel-arrow { font-size: 11px; color: var(--muted); transition: transform .2s; }
+  .channel-arrow.open { transform: rotate(90deg); }
+  .channel-body { padding: 4px 0 16px 38px; }
   /* Toggle switch for skills */
   .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
@@ -167,21 +188,243 @@ _HTML = """<!DOCTYPE html>
 
 <!-- CONFIG TAB -->
 <div id="tab-config" class="tab">
+
+  <!-- 区块①：AI 模型 -->
   <div class="card">
-    <h2>
-      <span>编辑配置</span>
-      <button class="btn btn-muted" onclick="loadConfigEditor()">↺ 重新加载</button>
-    </h2>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">直接编辑 JSON，点击保存后立即写入 config.json 文件。敏感字段（API Key 等）以明文显示，请勿截图分享。</p>
-    <div class="editor-wrap">
-      <textarea id="config-editor" spellcheck="false"></textarea>
+    <h2>AI 模型</h2>
+    <div class="form-group">
+      <label class="form-label">服务商</label>
+      <select id="cfg-provider" class="form-select" onchange="onProviderChange()">
+        <option value="openrouter">OpenRouter（推荐，支持所有主流模型）</option>
+        <option value="anthropic">Anthropic（Claude 官方）</option>
+        <option value="openai">OpenAI（GPT 系列）</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="gemini">Google Gemini</option>
+        <option value="zhipu">智谱 AI</option>
+        <option value="dashscope">阿里云百炼（DashScope）</option>
+        <option value="siliconflow">硅基流动（SiliconFlow）</option>
+        <option value="volcengine">火山引擎</option>
+        <option value="moonshot">Moonshot（月之暗面）</option>
+        <option value="groq">Groq</option>
+        <option value="custom">自定义（OpenAI 兼容接口）</option>
+      </select>
     </div>
-    <div class="editor-actions">
-      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
-      <button class="btn btn-muted"   onclick="loadConfigEditor()">取消</button>
-      <span class="save-msg" id="save-msg"></span>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <div class="input-eye">
+        <input id="cfg-apikey" type="password" class="form-input" placeholder="粘贴你的 API Key">
+        <button class="eye-btn" onclick="toggleEye('cfg-apikey', this)" title="显示/隐藏">👁</button>
+      </div>
+    </div>
+    <div class="form-group" id="custom-base-group" style="display:none">
+      <label class="form-label">API Base URL <span class="form-hint">自定义接口地址</span></label>
+      <input id="cfg-apibase" type="text" class="form-input" placeholder="https://api.example.com/v1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">模型 <span class="form-hint">格式：provider/model-name</span></label>
+      <input id="cfg-model" type="text" class="form-input" placeholder="anthropic/claude-opus-4-5">
     </div>
   </div>
+
+  <!-- 区块②：聊天渠道 -->
+  <div class="card">
+    <h2>聊天渠道</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">启用开关后填写对应凭据，保存即生效。</p>
+
+    <!-- Telegram -->
+    <div class="channel-block" id="ch-telegram">
+      <div class="channel-header" onclick="toggleChannel('telegram')">
+        <span class="channel-icon">✈️</span>
+        <span class="channel-name">Telegram</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-telegram-enabled" onchange="onChannelToggle('telegram', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-telegram-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-telegram-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Bot Token <span class="form-hint">向 @BotFather 获取</span></label>
+          <div class="input-eye">
+            <input id="ch-telegram-token" type="password" class="form-input" placeholder="123456:ABC-DEF...">
+            <button class="eye-btn" onclick="toggleEye('ch-telegram-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔，留空拒绝所有人，填 * 允许所有人</span></label>
+          <input id="ch-telegram-allow" type="text" class="form-input" placeholder="123456789, 987654321">
+        </div>
+      </div>
+    </div>
+
+    <!-- Discord -->
+    <div class="channel-block" id="ch-discord">
+      <div class="channel-header" onclick="toggleChannel('discord')">
+        <span class="channel-icon">🎮</span>
+        <span class="channel-name">Discord</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-discord-enabled" onchange="onChannelToggle('discord', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-discord-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-discord-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Bot Token</label>
+          <div class="input-eye">
+            <input id="ch-discord-token" type="password" class="form-input" placeholder="你的 Discord Bot Token">
+            <button class="eye-btn" onclick="toggleEye('ch-discord-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔</span></label>
+          <input id="ch-discord-allow" type="text" class="form-input" placeholder="123456789">
+        </div>
+      </div>
+    </div>
+
+    <!-- Slack -->
+    <div class="channel-block" id="ch-slack">
+      <div class="channel-header" onclick="toggleChannel('slack')">
+        <span class="channel-icon">💬</span>
+        <span class="channel-name">Slack</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-slack-enabled" onchange="onChannelToggle('slack', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-slack-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-slack-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Bot Token <span class="form-hint">xoxb- 开头</span></label>
+          <div class="input-eye">
+            <input id="ch-slack-token" type="password" class="form-input" placeholder="xoxb-...">
+            <button class="eye-btn" onclick="toggleEye('ch-slack-token', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">App-Level Token <span class="form-hint">xapp- 开头</span></label>
+          <div class="input-eye">
+            <input id="ch-slack-apptoken" type="password" class="form-input" placeholder="xapp-...">
+            <button class="eye-btn" onclick="toggleEye('ch-slack-apptoken', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feishu -->
+    <div class="channel-block" id="ch-feishu">
+      <div class="channel-header" onclick="toggleChannel('feishu')">
+        <span class="channel-icon">🪶</span>
+        <span class="channel-name">飞书 (Feishu)</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-feishu-enabled" onchange="onChannelToggle('feishu', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-feishu-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-feishu-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">App ID</label>
+          <input id="ch-feishu-appid" type="text" class="form-input" placeholder="cli_...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">App Secret</label>
+          <div class="input-eye">
+            <input id="ch-feishu-secret" type="password" class="form-input" placeholder="App Secret">
+            <button class="eye-btn" onclick="toggleEye('ch-feishu-secret', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="channel-block" id="ch-email">
+      <div class="channel-header" onclick="toggleChannel('email')">
+        <span class="channel-icon">📧</span>
+        <span class="channel-name">邮件 (Email)</span>
+        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
+          <input type="checkbox" id="ch-email-enabled" onchange="onChannelToggle('email', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="channel-arrow" id="ch-email-arrow">▶</span>
+      </div>
+      <div class="channel-body" id="ch-email-body" style="display:none">
+        <div class="form-group">
+          <label class="form-label">IMAP 服务器</label>
+          <input id="ch-email-imap" type="text" class="form-input" placeholder="imap.gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SMTP 服务器</label>
+          <input id="ch-email-smtp" type="text" class="form-input" placeholder="smtp.gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱地址</label>
+          <input id="ch-email-addr" type="text" class="form-input" placeholder="you@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码 / 授权码</label>
+          <div class="input-eye">
+            <input id="ch-email-pass" type="password" class="form-input" placeholder="应用专用密码">
+            <button class="eye-btn" onclick="toggleEye('ch-email-pass', this)" title="显示/隐藏">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 区块③：高级设置 -->
+  <div class="card">
+    <div class="channel-header" onclick="toggleAdvanced()" style="cursor:pointer;margin-bottom:0">
+      <span style="font-size:15px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">高级设置</span>
+      <span class="channel-arrow" id="adv-arrow">▶</span>
+    </div>
+    <div id="adv-body" style="display:none;margin-top:16px">
+      <div class="form-group">
+        <label class="form-label">工作区路径</label>
+        <input id="cfg-workspace" type="text" class="form-input" placeholder="~/.pgflow/workspace">
+      </div>
+      <div class="form-group">
+        <label class="form-label">网络代理 <span class="form-hint">留空不使用代理</span></label>
+        <input id="cfg-proxy" type="text" class="form-input" placeholder="http://127.0.0.1:7890">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:10px">
+          <label class="toggle">
+            <input type="checkbox" id="cfg-exec-enable" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          允许执行终端命令
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 保存按钮 -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <button class="btn btn-primary" onclick="saveFormConfig()">💾 保存配置</button>
+    <button class="btn btn-muted" onclick="loadFormConfig()">↺ 重新加载</button>
+    <span class="save-msg" id="save-msg"></span>
+  </div>
+
+  <!-- 高级：原始 JSON 编辑（折叠） -->
+  <div class="card">
+    <div class="channel-header" onclick="toggleRawJson()" style="cursor:pointer;margin-bottom:0">
+      <span style="font-size:13px;color:var(--muted)">🛠 高级：查看 / 编辑原始 JSON</span>
+      <span class="channel-arrow" id="raw-arrow">▶</span>
+    </div>
+    <div id="raw-body" style="display:none;margin-top:16px">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">直接修改 JSON 会覆盖上方表单的所有设置，请谨慎操作。</p>
+      <textarea id="config-editor" spellcheck="false" style="width:100%;min-height:280px;background:#0a0c15;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;font-family:monospace;color:#a8b3cf;line-height:1.6;resize:vertical;outline:none"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+        <button class="btn btn-primary" onclick="saveRawJson()">💾 保存 JSON</button>
+        <button class="btn btn-muted" onclick="loadRawJson()">↺ 重新加载</button>
+        <span class="save-msg" id="raw-save-msg"></span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- LOGS TAB -->
@@ -213,7 +456,7 @@ function show(name, btn) {
   btn.classList.add('active');
   if (name === 'status') loadStatus();
   if (name === 'skills') loadSkills();
-  if (name === 'config') loadConfigEditor();
+  if (name === 'config') loadFormConfig();
   if (name === 'logs')   loadLogs();
 }
 
@@ -330,12 +573,275 @@ async function toggleSkill(name, enabled) {
   }
 }
 
-// ── Config Editor ──────────────────────────────────────────────────────────
-async function loadConfigEditor() {
-  const ta  = document.getElementById('config-editor');
+// ── Config Form ─────────────────────────────────────────────────────────────
+
+// 渠道展开/收起
+function toggleChannel(name) {
+  const body  = document.getElementById('ch-' + name + '-body');
+  const arrow = document.getElementById('ch-' + name + '-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display  = open ? 'block' : 'none';
+  arrow.classList.toggle('open', open);
+}
+
+// 启用渠道时自动展开
+function onChannelToggle(name, checked) {
+  const body  = document.getElementById('ch-' + name + '-body');
+  const arrow = document.getElementById('ch-' + name + '-arrow');
+  if (checked) {
+    body.style.display = 'block';
+    arrow.classList.add('open');
+  }
+}
+
+// 切换 API Key 显示
+function toggleEye(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+// 自定义接口时显示 Base URL 输入框
+function onProviderChange() {
+  const v = document.getElementById('cfg-provider').value;
+  document.getElementById('custom-base-group').style.display = v === 'custom' ? 'block' : 'none';
+}
+
+// 高级设置折叠
+function toggleAdvanced() {
+  const body  = document.getElementById('adv-body');
+  const arrow = document.getElementById('adv-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  arrow.classList.toggle('open', open);
+}
+
+// 原始 JSON 折叠
+function toggleRawJson() {
+  const body  = document.getElementById('raw-body');
+  const arrow = document.getElementById('raw-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  arrow.classList.toggle('open', open);
+  if (open) loadRawJson();
+}
+
+// 把 allowFrom 数组转成逗号字符串
+function allowToStr(arr) {
+  if (!arr || arr.length === 0) return '';
+  return arr.join(', ');
+}
+// 把逗号字符串转回数组
+function strToAllow(s) {
+  return s.split(',').map(x => x.trim()).filter(Boolean);
+}
+
+// 从 config JSON 填充表单
+function fillForm(cfg) {
+  // ① AI 模型
+  const providers = cfg.providers || {};
+  const agentDef  = (cfg.agents || {}).defaults || {};
+
+  // 判断当前使用的 provider
+  const providerNames = ['openrouter','anthropic','openai','deepseek','gemini',
+    'zhipu','dashscope','siliconflow','volcengine','moonshot','groq'];
+  let activeProvider = 'custom';
+  let activeApiKey   = '';
+  let activeApiBase  = '';
+  for (const name of providerNames) {
+    const p = providers[name] || {};
+    if (p.apiKey) { activeProvider = name; activeApiKey = p.apiKey; activeApiBase = p.apiBase || ''; break; }
+  }
+  if (activeProvider === 'custom') {
+    const p = providers.custom || {};
+    activeApiKey  = p.apiKey  || '';
+    activeApiBase = p.apiBase || '';
+  }
+
+  const sel = document.getElementById('cfg-provider');
+  for (const opt of sel.options) { if (opt.value === activeProvider) { sel.value = activeProvider; break; } }
+  document.getElementById('cfg-apikey').value   = activeApiKey;
+  document.getElementById('cfg-apibase').value  = activeApiBase;
+  document.getElementById('cfg-model').value    = agentDef.model || '';
+  document.getElementById('custom-base-group').style.display = activeProvider === 'custom' ? 'block' : 'none';
+
+  // ② 渠道
+  const channels = cfg.channels || {};
+  const chMap = {
+    telegram: { enabled: 'ch-telegram-enabled', token: 'ch-telegram-token', allow: 'ch-telegram-allow' },
+    discord:  { enabled: 'ch-discord-enabled',  token: 'ch-discord-token',  allow: 'ch-discord-allow'  },
+    slack:    { enabled: 'ch-slack-enabled',     token: 'ch-slack-token'  },
+    feishu:   { enabled: 'ch-feishu-enabled'   },
+    email:    { enabled: 'ch-email-enabled'    },
+  };
+  // telegram
+  { const c = channels.telegram || {};
+    document.getElementById('ch-telegram-enabled').checked = !!c.enabled;
+    document.getElementById('ch-telegram-token').value     = c.token || '';
+    document.getElementById('ch-telegram-allow').value     = allowToStr(c.allowFrom); }
+  // discord
+  { const c = channels.discord || {};
+    document.getElementById('ch-discord-enabled').checked = !!c.enabled;
+    document.getElementById('ch-discord-token').value     = c.token || '';
+    document.getElementById('ch-discord-allow').value     = allowToStr(c.allowFrom); }
+  // slack
+  { const c = channels.slack || {};
+    document.getElementById('ch-slack-enabled').checked   = !!c.enabled;
+    document.getElementById('ch-slack-token').value       = c.botToken || c.token || '';
+    document.getElementById('ch-slack-apptoken').value    = c.appToken || ''; }
+  // feishu
+  { const c = channels.feishu || {};
+    document.getElementById('ch-feishu-enabled').checked  = !!c.enabled;
+    document.getElementById('ch-feishu-appid').value      = c.appId || '';
+    document.getElementById('ch-feishu-secret').value     = c.appSecret || ''; }
+  // email
+  { const c = channels.email || {};
+    document.getElementById('ch-email-enabled').checked   = !!c.enabled;
+    document.getElementById('ch-email-imap').value        = c.imapHost || '';
+    document.getElementById('ch-email-smtp').value        = c.smtpHost || '';
+    document.getElementById('ch-email-addr').value        = c.email || c.address || '';
+    document.getElementById('ch-email-pass').value        = c.password || ''; }
+
+  // ③ 高级
+  const tools = cfg.tools || {};
+  document.getElementById('cfg-workspace').value      = agentDef.workspace || '';
+  document.getElementById('cfg-proxy').value          = (tools.web || {}).proxy || '';
+  document.getElementById('cfg-exec-enable').checked  = (tools.exec || {}).enable !== false;
+}
+
+// 从表单收集，合并回原始 cfg 对象（保留未展示的字段）
+function collectForm(cfg) {
+  cfg = JSON.parse(JSON.stringify(cfg)); // deep clone
+
+  // ① AI 模型
+  const provider = document.getElementById('cfg-provider').value;
+  const apiKey   = document.getElementById('cfg-apikey').value.trim();
+  const apiBase  = document.getElementById('cfg-apibase').value.trim();
+  const model    = document.getElementById('cfg-model').value.trim();
+
+  if (!cfg.providers) cfg.providers = {};
+  // 清除其他 provider 的 apiKey（避免多个同时生效产生歧义），保留 apiBase
+  const knownProviders = ['openrouter','anthropic','openai','deepseek','gemini',
+    'zhipu','dashscope','siliconflow','volcengine','moonshot','groq','custom'];
+  for (const name of knownProviders) {
+    if (cfg.providers[name] && cfg.providers[name].apiKey && name !== provider) {
+      // 只置空 apiKey，保留其他字段
+      cfg.providers[name].apiKey = '';
+    }
+  }
+  if (!cfg.providers[provider]) cfg.providers[provider] = {};
+  cfg.providers[provider].apiKey = apiKey;
+  if (provider === 'custom' && apiBase) cfg.providers[provider].apiBase = apiBase;
+
+  if (!cfg.agents) cfg.agents = {};
+  if (!cfg.agents.defaults) cfg.agents.defaults = {};
+  if (model) cfg.agents.defaults.model = model;
+
+  // ② 渠道
+  if (!cfg.channels) cfg.channels = {};
+  // telegram
+  { const enabled = document.getElementById('ch-telegram-enabled').checked;
+    const token   = document.getElementById('ch-telegram-token').value.trim();
+    const allow   = strToAllow(document.getElementById('ch-telegram-allow').value);
+    if (!cfg.channels.telegram) cfg.channels.telegram = {};
+    cfg.channels.telegram.enabled   = enabled;
+    if (token) cfg.channels.telegram.token     = token;
+    cfg.channels.telegram.allowFrom = allow; }
+  // discord
+  { const enabled = document.getElementById('ch-discord-enabled').checked;
+    const token   = document.getElementById('ch-discord-token').value.trim();
+    const allow   = strToAllow(document.getElementById('ch-discord-allow').value);
+    if (!cfg.channels.discord) cfg.channels.discord = {};
+    cfg.channels.discord.enabled   = enabled;
+    if (token) cfg.channels.discord.token     = token;
+    cfg.channels.discord.allowFrom = allow; }
+  // slack
+  { const enabled  = document.getElementById('ch-slack-enabled').checked;
+    const token    = document.getElementById('ch-slack-token').value.trim();
+    const appToken = document.getElementById('ch-slack-apptoken').value.trim();
+    if (!cfg.channels.slack) cfg.channels.slack = {};
+    cfg.channels.slack.enabled = enabled;
+    if (token)    cfg.channels.slack.botToken = token;
+    if (appToken) cfg.channels.slack.appToken = appToken; }
+  // feishu
+  { const enabled = document.getElementById('ch-feishu-enabled').checked;
+    const appId   = document.getElementById('ch-feishu-appid').value.trim();
+    const secret  = document.getElementById('ch-feishu-secret').value.trim();
+    if (!cfg.channels.feishu) cfg.channels.feishu = {};
+    cfg.channels.feishu.enabled = enabled;
+    if (appId)  cfg.channels.feishu.appId     = appId;
+    if (secret) cfg.channels.feishu.appSecret = secret; }
+  // email
+  { const enabled = document.getElementById('ch-email-enabled').checked;
+    const imap    = document.getElementById('ch-email-imap').value.trim();
+    const smtp    = document.getElementById('ch-email-smtp').value.trim();
+    const addr    = document.getElementById('ch-email-addr').value.trim();
+    const pass    = document.getElementById('ch-email-pass').value.trim();
+    if (!cfg.channels.email) cfg.channels.email = {};
+    cfg.channels.email.enabled = enabled;
+    if (imap) cfg.channels.email.imapHost = imap;
+    if (smtp) cfg.channels.email.smtpHost = smtp;
+    if (addr) cfg.channels.email.email    = addr;
+    if (pass) cfg.channels.email.password = pass; }
+
+  // ③ 高级
+  const workspace = document.getElementById('cfg-workspace').value.trim();
+  const proxy     = document.getElementById('cfg-proxy').value.trim();
+  const execEn    = document.getElementById('cfg-exec-enable').checked;
+  if (workspace) cfg.agents.defaults.workspace = workspace;
+  if (!cfg.tools) cfg.tools = {};
+  if (!cfg.tools.web) cfg.tools.web = {};
+  cfg.tools.web.proxy = proxy || null;
+  if (!cfg.tools.exec) cfg.tools.exec = {};
+  cfg.tools.exec.enable = execEn;
+
+  return cfg;
+}
+
+let _rawCfg = {};  // 最近一次从服务端读取的完整 cfg 对象
+
+async function loadFormConfig() {
   const msg = document.getElementById('save-msg');
   msg.textContent = '';
-  ta.value = '加载中…';
+  try {
+    const d = await api('/api/config/raw');
+    _rawCfg = d.raw ? JSON.parse(d.raw) : {};
+    fillForm(_rawCfg);
+  } catch(e) {
+    msg.className = 'save-msg err';
+    msg.textContent = '❌ 读取配置失败';
+  }
+}
+
+async function saveFormConfig() {
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '';
+  try {
+    const merged = collectForm(_rawCfg);
+    const raw    = JSON.stringify(merged, null, 2);
+    const r = await api('/api/config/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({raw}),
+    });
+    if (r.ok) {
+      _rawCfg = merged;
+      msg.className = 'save-msg ok';
+      msg.textContent = '✓ 已保存';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    } else {
+      msg.className = 'save-msg err';
+      msg.textContent = '❌ ' + (r.error || '保存失败');
+    }
+  } catch(e) {
+    msg.className = 'save-msg err';
+    msg.textContent = '❌ ' + e.message;
+  }
+}
+
+// ── Raw JSON editor ─────────────────────────────────────────────────────────
+async function loadRawJson() {
+  const ta = document.getElementById('config-editor');
   try {
     const d = await api('/api/config/raw');
     ta.value = d.raw || '';
@@ -344,20 +850,15 @@ async function loadConfigEditor() {
   }
 }
 
-async function saveConfig() {
+async function saveRawJson() {
   const ta  = document.getElementById('config-editor');
-  const msg = document.getElementById('save-msg');
+  const msg = document.getElementById('raw-save-msg');
   msg.textContent = '';
-
-  // Validate JSON first
-  try {
-    JSON.parse(ta.value);
-  } catch(e) {
+  try { JSON.parse(ta.value); } catch(e) {
     msg.className = 'save-msg err';
     msg.textContent = '❌ JSON 格式错误：' + e.message;
     return;
   }
-
   try {
     const r = await api('/api/config/save', {
       method: 'POST',
@@ -365,6 +866,8 @@ async function saveConfig() {
       body: JSON.stringify({raw: ta.value}),
     });
     if (r.ok) {
+      _rawCfg = JSON.parse(ta.value);
+      fillForm(_rawCfg);
       msg.className = 'save-msg ok';
       msg.textContent = '✓ 已保存';
       setTimeout(() => { msg.textContent = ''; }, 3000);
