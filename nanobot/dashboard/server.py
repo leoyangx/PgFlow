@@ -450,10 +450,41 @@ def _get_exe_path():
     return found if found else str(sys.executable)
 
 
+def _find_gateway_process():
+    """Scan system processes for a running pgflow gateway (any process, any parent)."""
+    import sys
+    try:
+        import subprocess
+        if sys.platform == "win32":
+            # wmic is available on all Windows versions we support
+            result = subprocess.run(
+                ["wmic", "process", "get", "ProcessId,CommandLine", "/format:csv"],
+                capture_output=True, text=True, timeout=5,
+            )
+            exe_name = Path(sys.executable).stem.lower() if getattr(sys, "frozen", False) else "pgflow"
+            for line in result.stdout.splitlines():
+                lower = line.lower()
+                if exe_name in lower and "gateway" in lower:
+                    # Extract PID (last field in csv: Node,CommandLine,ProcessId)
+                    parts = line.strip().split(",")
+                    try:
+                        pid = int(parts[-1])
+                        if pid > 0:
+                            return pid
+                    except (ValueError, IndexError):
+                        pass
+    except Exception:
+        pass
+    return None
+
+
 def _gateway_running() -> bool:
-    import subprocess
+    # First check our own managed process
     with _gateway_lock:
-        return _gateway_proc is not None and _gateway_proc.poll() is None
+        if _gateway_proc is not None and _gateway_proc.poll() is None:
+            return True
+    # Then scan system processes (catches gateways started by tray or terminal)
+    return _find_gateway_process() is not None
 
 
 def _start_gateway_proc() -> None:
@@ -539,12 +570,13 @@ def _get_status() -> dict:
 
 
 def _get_gateway() -> dict:
-    running = _gateway_running()
-    pid = None
+    # Check our managed process first
     with _gateway_lock:
-        if _gateway_proc and _gateway_proc.poll() is None:
-            pid = _gateway_proc.pid
-    return {"running": running, "pid": pid}
+        if _gateway_proc is not None and _gateway_proc.poll() is None:
+            return {"running": True, "pid": _gateway_proc.pid}
+    # Fall back to system-wide scan
+    pid = _find_gateway_process()
+    return {"running": pid is not None, "pid": pid}
 
 
 def _post_gateway(action: str) -> dict:
