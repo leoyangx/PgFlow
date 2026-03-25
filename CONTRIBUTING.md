@@ -1,69 +1,28 @@
 # Contributing to PgFlow
 
-Thank you for being here.
+Thank you for your interest in contributing.
+
+> PgFlow is built upon [nanobot-ai/nanobot](https://github.com/nanobot-ai/nanobot).
+> We thank the original authors and all contributors for their foundational work.
 
 PgFlow is built with a simple belief: good tools should feel calm, clear, and humane.
-We care deeply about useful features, but we also believe in achieving more with less:
-solutions should be powerful without becoming heavy, and ambitious without becoming
-needlessly complicated.
-
-This guide is not only about how to open a PR. It is also about how we hope to build
-software together: with care, clarity, and respect for the next person reading the code.
+We care deeply about useful features, but we also believe in achieving more with less.
 
 ## Branching Strategy
-
-We use a two-branch model to balance stability and exploration:
 
 | Branch | Purpose | Stability |
 |--------|---------|-----------|
 | `main` | Stable releases | Production-ready |
-| `nightly` | Experimental features | May have bugs or breaking changes |
+| `nightly` | Experimental features | May have bugs |
 
-### Which Branch Should I Target?
+**Target `nightly`** for new features, refactoring, API changes.
+**Target `main`** for bug fixes, documentation, minor tweaks.
 
-**Target `nightly` if your PR includes:**
-
-- New features or functionality
-- Refactoring that may affect existing behavior
-- Changes to APIs or configuration
-
-**Target `main` if your PR includes:**
-
-- Bug fixes with no behavior changes
-- Documentation improvements
-- Minor tweaks that don't affect functionality
-
-**When in doubt, target `nightly`.** It is easier to move a stable idea from `nightly`
-to `main` than to undo a risky change after it lands in the stable branch.
-
-### How Does Nightly Get Merged to Main?
-
-We don't merge the entire `nightly` branch. Instead, stable features are **cherry-picked** from `nightly` into individual PRs targeting `main`:
-
-```
-nightly  ──┬── feature A (stable) ──► PR ──► main
-           ├── feature B (testing)
-           └── feature C (stable) ──► PR ──► main
-```
-
-This happens approximately **once a week**, but the timing depends on when features become stable enough.
-
-### Quick Summary
-
-| Your Change | Target Branch |
-|-------------|---------------|
-| New feature | `nightly` |
-| Bug fix | `main` |
-| Documentation | `main` |
-| Refactoring | `nightly` |
-| Unsure | `nightly` |
+When in doubt, target `nightly`.
 
 ## Development Setup
 
-Keep setup boring and reliable. The goal is to get you into the code quickly:
-
 ```bash
-# Clone the repository
 git clone https://github.com/leoyangx/PgFlow.git
 cd PgFlow
 
@@ -73,39 +32,22 @@ pip install -e ".[dev]"
 # Run tests
 pytest
 
-# Lint code
+# Lint
 ruff check nanobot/
 
-# Format code
+# Format
 ruff format nanobot/
 ```
 
 ## Code Style
 
-We care about more than passing lint. We want PgFlow to stay small, calm, and readable.
-
-When contributing, please aim for code that feels:
-
-- Simple: prefer the smallest change that solves the real problem
-- Clear: optimize for the next reader, not for cleverness
-- Decoupled: keep boundaries clean and avoid unnecessary new abstractions
-- Honest: do not hide complexity, but do not create extra complexity either
-- Durable: choose solutions that are easy to maintain, test, and extend
-
-In practice:
-
 - Line length: 100 characters (`ruff`)
 - Target: Python 3.11+
-- Linting: `ruff` with rules E, F, I, N, W (E501 ignored)
-- Async: uses `asyncio` throughout; pytest with `asyncio_mode = "auto"`
-- Prefer readable code over magical code
-- Prefer focused patches over broad rewrites
-- If a new abstraction is introduced, it should clearly reduce complexity rather than move it around
+- Linting: `ruff` with rules E, F, I, N, W
+- Async: `asyncio` throughout; pytest with `asyncio_mode = "auto"`
+- Prefer readable over clever; prefer focused patches over broad rewrites
 
 ## Questions?
 
-If you have questions, ideas, or half-formed insights, you are warmly welcome here.
-
-Please feel free to open an [issue](https://github.com/leoyangx/PgFlow/issues) or join the community.
-
-Thank you for spending your time and care on PgFlow. We genuinely welcome contributions of all sizes.
+Open an [issue](https://github.com/leoyangx/PgFlow/issues) or start a discussion.
+Thank you for spending your time and care on PgFlow.

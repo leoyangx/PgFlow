@@ -1,8 +1,10 @@
 # Community
 
-Join the PgFlow community to get help, share feedback, and discuss ideas.
+欢迎加入 PgFlow 社区，获取帮助、分享反馈和讨论想法。
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/your-org/pgflow/issues)
-- **GitHub Discussions**: [Ask questions and share ideas](https://github.com/your-org/pgflow/discussions)
+- **GitHub Issues**: [报告 Bug 或提功能建议](https://github.com/leoyangx/PgFlow/issues)
+- **GitHub Discussions**: [提问和分享想法](https://github.com/leoyangx/PgFlow/discussions)
 
-For real-time chat, check the links in the GitHub repository.
+---
+
+> PgFlow 基于 [nanobot-ai/nanobot](https://github.com/nanobot-ai/nanobot) 二次开发，感谢原作者的贡献。
