@@ -457,114 +457,281 @@ _HTML = """<!DOCTYPE html>
 <!-- DOCS TAB -->
 <div id="tab-docs" class="tab">
 
+  <!-- 平台导航 -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="scrollToDoc('doc-win')">🪟 Windows</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-mac')">🍎 macOS</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-linux')">🐧 Linux 桌面</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-vps')">☁️ VPS 服务器</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-telegram')">✈️ 连接 Telegram</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-providers')">🤖 AI 服务商</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-workspace')">📁 工作区文件</button>
+    <button class="btn btn-muted"   onclick="scrollToDoc('doc-faq')">❓ 常见问题</button>
+  </div>
+
   <div class="card">
-    <!-- 快速开始 -->
-    <div class="doc-section">
-      <h3>🚀 快速开始</h3>
-      <p>PgFlow 是一个运行在你自己电脑上的 AI 助手，通过 Telegram 等聊天应用与它对话，你的数据不会上传到任何第三方服务器。</p>
+
+    <!-- ── Windows ── -->
+    <div class="doc-section" id="doc-win">
+      <h3>🪟 Windows 使用说明</h3>
+      <p>Windows 是 PgFlow 的主要支持平台，提供完整的图形化体验，无需任何命令行操作。</p>
+
+      <p><strong>安装步骤</strong></p>
       <ol>
-        <li><strong>获取 API Key</strong> — 前往你选择的 AI 服务商注册并创建 API Key（推荐 <strong>OpenRouter</strong>，一个 Key 可用所有主流模型）</li>
-        <li><strong>填写配置</strong> — 点击顶部「配置」Tab，选择服务商、填写 API Key 并保存</li>
-        <li><strong>连接聊天渠道</strong> — 在配置页开启 Telegram 或其他渠道，填写 Token 后保存</li>
-        <li><strong>启动网关</strong> — 右键系统托盘图标 → <strong>重启服务</strong>，让配置生效</li>
-        <li><strong>开始对话</strong> — 打开 Telegram，向你的 Bot 发消息，AI 会立即响应</li>
+        <li>下载最新版 <span class="doc-code">pgflow-windows.zip</span>，解压到任意位置（如桌面）</li>
+        <li>解压后得到 <span class="doc-code">pgflow/</span> 文件夹，<strong>不要移动或删除其中的 <span class="doc-code">_internal/</span> 子文件夹</strong>，否则程序无法启动</li>
+        <li>双击 <span class="doc-code">pgflow.exe</span>，系统托盘右下角会出现 🌊 图标，浏览器自动打开管理面板</li>
       </ol>
+
+      <p><strong>首次配置</strong></p>
+      <ol>
+        <li>面板顶部点击「配置」，填写 AI 服务商和 API Key，开启 Telegram 渠道并填写 Bot Token</li>
+        <li>点击「保存配置」</li>
+        <li>右键托盘图标 → <strong>重启服务</strong>，配置生效</li>
+        <li>向 Telegram Bot 发送消息测试</li>
+      </ol>
+
+      <p><strong>日常使用</strong></p>
+      <table class="doc-table">
+        <thead><tr><th>操作</th><th>方法</th></tr></thead>
+        <tbody>
+          <tr><td>启动 PgFlow</td><td>双击 pgflow.exe，或开机自启后自动运行</td></tr>
+          <tr><td>开机自启</td><td>右键托盘图标 → 开机自启（打勾启用）</td></tr>
+          <tr><td>修改配置</td><td>面板「配置」Tab 修改 → 保存 → 右键托盘重启服务</td></tr>
+          <tr><td>查看日志</td><td>右键托盘图标 → 查看日志</td></tr>
+          <tr><td>退出程序</td><td>右键托盘图标 → 退出</td></tr>
+        </tbody>
+      </table>
+      <div class="doc-warn">⚠️ 部分杀毒软件（如 Windows Defender）可能误报 pgflow.exe 为威胁。这是 PyInstaller 打包程序的常见误报，并非病毒。请将 <span class="doc-code">pgflow/</span> 文件夹添加到杀毒软件的排除列表即可。</div>
     </div>
 
-    <!-- 获取 Telegram Bot Token -->
-    <div class="doc-section">
+    <!-- ── macOS ── -->
+    <div class="doc-section" id="doc-mac">
+      <h3>🍎 macOS 使用说明</h3>
+      <p>macOS 版本通过命令行启动，面板功能与 Windows 完全一致，可在浏览器中完成所有配置。</p>
+
+      <p><strong>安装步骤</strong></p>
+      <ol>
+        <li>确认已安装 Python 3.11 或更高版本。打开终端，运行：<br>
+          <span class="doc-code">python3 --version</span><br>
+          如果未安装，前往 <span class="doc-code">python.org</span> 下载安装
+        </li>
+        <li>下载源码包并解压，或通过终端克隆：<br>
+          <span class="doc-code">git clone https://github.com/leoyangx/PgFlow.git</span>
+        </li>
+        <li>进入项目目录，安装依赖：<br>
+          <span class="doc-code">cd PgFlow && pip3 install -e .</span>
+        </li>
+      </ol>
+
+      <p><strong>启动方式</strong></p>
+      <ol>
+        <li>打开终端，运行以下命令启动网关（保持终端窗口开启）：<br>
+          <span class="doc-code">pgflow gateway</span>
+        </li>
+        <li>另开一个终端窗口，打开管理面板：<br>
+          <span class="doc-code">pgflow dashboard</span><br>
+          或直接在浏览器访问 <span class="doc-code">http://localhost:18791</span>
+        </li>
+        <li>在面板「配置」Tab 完成 API Key 和渠道配置，保存后重新运行 <span class="doc-code">pgflow gateway</span></li>
+      </ol>
+
+      <p><strong>开机自启（可选）</strong></p>
+      <p>在终端运行以下命令，创建 macOS 启动项：</p>
+      <ol>
+        <li>找到 pgflow 的完整路径：<span class="doc-code">which pgflow</span></li>
+        <li>创建文件 <span class="doc-code">~/Library/LaunchAgents/ai.pgflow.gateway.plist</span>，内容参考项目文档</li>
+        <li>运行 <span class="doc-code">launchctl load ~/Library/LaunchAgents/ai.pgflow.gateway.plist</span> 启用</li>
+      </ol>
+      <div class="doc-warn">⚠️ 首次运行时 macOS Gatekeeper 可能阻止程序。前往「系统设置 → 隐私与安全性」，点击「仍要打开」即可。</div>
+    </div>
+
+    <!-- ── Linux 桌面 ── -->
+    <div class="doc-section" id="doc-linux">
+      <h3>🐧 Linux 桌面使用说明</h3>
+      <p>适用于 Ubuntu、Debian、Fedora 等带桌面环境的 Linux 系统。操作方式与 macOS 类似。</p>
+
+      <p><strong>安装步骤</strong></p>
+      <ol>
+        <li>确认 Python 版本 ≥ 3.11：<span class="doc-code">python3 --version</span><br>
+          Ubuntu 22.04 及以上已自带，旧版本需通过 <span class="doc-code">deadsnakes</span> PPA 安装
+        </li>
+        <li>克隆项目并安装：<br>
+          <span class="doc-code">git clone https://github.com/leoyangx/PgFlow.git</span><br>
+          <span class="doc-code">cd PgFlow && pip3 install -e .</span>
+        </li>
+      </ol>
+
+      <p><strong>启动方式</strong></p>
+      <ol>
+        <li>启动网关（后台运行）：<br>
+          <span class="doc-code">pgflow gateway &</span>
+        </li>
+        <li>浏览器访问面板：<span class="doc-code">http://localhost:18791</span></li>
+        <li>在面板完成配置后，停止网关重新启动使配置生效：<br>
+          <span class="doc-code">pkill -f "pgflow gateway" && pgflow gateway &</span>
+        </li>
+      </ol>
+
+      <p><strong>开机自启（systemd）</strong></p>
+      <ol>
+        <li>创建服务文件 <span class="doc-code">/etc/systemd/system/pgflow.service</span>（需要 sudo）</li>
+        <li>填写服务配置后运行：<br>
+          <span class="doc-code">sudo systemctl enable pgflow && sudo systemctl start pgflow</span>
+        </li>
+      </ol>
+      <div class="doc-tip">💡 GNOME 桌面默认不显示系统托盘，安装扩展 <span class="doc-code">gnome-shell-extension-appindicator</span> 可解决此问题。不使用托盘时，直接用命令行管理网关即可。</div>
+    </div>
+
+    <!-- ── VPS 服务器 ── -->
+    <div class="doc-section" id="doc-vps">
+      <h3>☁️ VPS 服务器使用说明</h3>
+      <p>在无图形界面的云服务器（如阿里云、腾讯云、AWS）上运行 PgFlow，让 AI 助手 24 小时不间断在线，即使本地电脑关机也能正常响应。</p>
+
+      <p><strong>系统要求</strong></p>
+      <ul>
+        <li>操作系统：Ubuntu 22.04 / Debian 11 或更高（推荐）</li>
+        <li>Python 3.11+</li>
+        <li>内存：512MB 以上（推荐 1GB）</li>
+        <li>不需要图形界面，纯命令行操作</li>
+      </ul>
+
+      <p><strong>安装步骤</strong></p>
+      <ol>
+        <li>SSH 连接到服务器，安装 Python 和 git：<br>
+          <span class="doc-code">sudo apt update && sudo apt install -y python3.11 python3-pip git</span>
+        </li>
+        <li>克隆项目并安装依赖：<br>
+          <span class="doc-code">git clone https://github.com/leoyangx/PgFlow.git && cd PgFlow</span><br>
+          <span class="doc-code">pip3 install -e .</span>
+        </li>
+        <li>首次配置（通过命令行向导）：<br>
+          <span class="doc-code">pgflow onboard --wizard</span><br>
+          按提示填写 API Key 和 Telegram Token
+        </li>
+      </ol>
+
+      <p><strong>后台持久运行（推荐用 screen 或 tmux）</strong></p>
+      <ol>
+        <li>安装 screen：<span class="doc-code">sudo apt install -y screen</span></li>
+        <li>创建后台会话：<span class="doc-code">screen -S pgflow</span></li>
+        <li>启动网关：<span class="doc-code">pgflow gateway</span></li>
+        <li>按 <span class="doc-code">Ctrl+A</span> 然后 <span class="doc-code">D</span> 将会话挂到后台，SSH 断开后网关继续运行</li>
+        <li>下次 SSH 登录后，用 <span class="doc-code">screen -r pgflow</span> 重新连接查看状态</li>
+      </ol>
+
+      <p><strong>开机自启（systemd 服务）</strong></p>
+      <ol>
+        <li>创建服务文件：<br>
+          <span class="doc-code">sudo nano /etc/systemd/system/pgflow.service</span>
+        </li>
+        <li>填入以下内容（将 <span class="doc-code">YOUR_USER</span> 替换为你的用户名）：
+          <pre style="margin:8px 0;font-size:12px">[Unit]
+Description=PgFlow Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+ExecStart=/usr/local/bin/pgflow gateway
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</pre>
+        </li>
+        <li>启用并启动：<br>
+          <span class="doc-code">sudo systemctl daemon-reload</span><br>
+          <span class="doc-code">sudo systemctl enable pgflow</span><br>
+          <span class="doc-code">sudo systemctl start pgflow</span>
+        </li>
+        <li>查看运行状态：<span class="doc-code">sudo systemctl status pgflow</span></li>
+      </ol>
+
+      <p><strong>远程访问管理面板</strong></p>
+      <p>VPS 上的面板默认只监听本地（127.0.0.1:18791），有两种方式远程访问：</p>
+      <ul>
+        <li><strong>SSH 端口转发（推荐，更安全）：</strong><br>
+          本地终端运行：<span class="doc-code">ssh -L 18791:127.0.0.1:18791 user@你的服务器IP</span><br>
+          然后本地浏览器访问 <span class="doc-code">http://localhost:18791</span>
+        </li>
+        <li><strong>修改配置开放端口（不推荐，有安全风险）：</strong><br>
+          在配置中将 gateway host 改为 <span class="doc-code">0.0.0.0</span> 并在防火墙放行 18791 端口
+        </li>
+      </ul>
+      <div class="doc-warn">⚠️ 不建议将管理面板直接暴露到公网，面板目前没有登录验证，任何人都可以访问和修改配置。使用 SSH 端口转发是最安全的远程访问方式。</div>
+    </div>
+
+    <!-- ── Telegram ── -->
+    <div class="doc-section" id="doc-telegram">
       <h3>✈️ 连接 Telegram</h3>
       <ol>
         <li>在 Telegram 搜索 <span class="doc-code">@BotFather</span>，发送 <span class="doc-code">/newbot</span></li>
-        <li>按提示输入 Bot 名称，BotFather 会返回一串 Token，格式类似 <span class="doc-code">123456:ABC-DEF1234...</span></li>
+        <li>按提示输入 Bot 名称，BotFather 返回 Token，格式类似 <span class="doc-code">123456:ABC-DEF1234...</span></li>
         <li>搜索 <span class="doc-code">@userinfobot</span>，发送任意消息，获取你自己的用户 ID（纯数字）</li>
-        <li>在「配置」→「聊天渠道」→「Telegram」中填入 Token 和你的用户 ID，开启开关并保存</li>
-        <li>右键托盘 → 重启服务，然后向 Bot 发送 <span class="doc-code">/start</span> 测试</li>
+        <li>在「配置」→「聊天渠道」→「Telegram」中填入 Token 和用户 ID，开启开关并保存</li>
+        <li>重启网关后，向 Bot 发送 <span class="doc-code">/start</span> 测试</li>
       </ol>
-      <div class="doc-tip">💡 <strong>allowFrom（允许的用户 ID）</strong>：填入你自己的 ID 可确保只有你能使用这个 Bot；留空则拒绝所有人；填 <span class="doc-code">*</span> 允许所有人（不推荐公开使用）</div>
+      <div class="doc-tip">💡 <strong>allowFrom（允许的用户 ID）</strong>：填入你自己的 ID 确保只有你能使用；留空则拒绝所有人；填 <span class="doc-code">*</span> 允许所有人（不推荐）</div>
     </div>
 
-    <!-- 推荐的 AI 服务商 -->
-    <div class="doc-section">
+    <!-- ── AI 服务商 ── -->
+    <div class="doc-section" id="doc-providers">
       <h3>🤖 推荐的 AI 服务商</h3>
       <table class="doc-table">
-        <thead><tr><th>服务商</th><th>特点</th><th>获取 Key</th></tr></thead>
+        <thead><tr><th>服务商</th><th>特点</th><th>注册地址</th></tr></thead>
         <tbody>
-          <tr><td>OpenRouter</td><td>聚合平台，一个 Key 可用 Claude、GPT、Gemini 等所有模型，按量计费</td><td>openrouter.ai</td></tr>
-          <tr><td>Anthropic</td><td>Claude 官方，性能最强，直连稳定</td><td>console.anthropic.com</td></tr>
-          <tr><td>DeepSeek</td><td>国内高性价比，中文理解优秀，价格极低</td><td>platform.deepseek.com</td></tr>
-          <tr><td>硅基流动</td><td>国内聚合平台，支持多种开源模型，有免费额度</td><td>siliconflow.cn</td></tr>
-          <tr><td>智谱 AI</td><td>GLM 系列，国内直连，有免费额度</td><td>open.bigmodel.cn</td></tr>
+          <tr><td>OpenRouter</td><td>聚合平台，一个 Key 用所有模型，按量计费，新用户有免费额度</td><td>openrouter.ai</td></tr>
+          <tr><td>Anthropic</td><td>Claude 官方，能力最强，需海外信用卡</td><td>console.anthropic.com</td></tr>
+          <tr><td>DeepSeek</td><td>国内直连，中文极强，价格极低，推荐国内用户</td><td>platform.deepseek.com</td></tr>
+          <tr><td>硅基流动</td><td>国内聚合平台，支持 DeepSeek/Qwen 等，有免费额度</td><td>siliconflow.cn</td></tr>
+          <tr><td>智谱 AI</td><td>GLM 系列，国内直连，注册即送免费额度</td><td>open.bigmodel.cn</td></tr>
+          <tr><td>阿里云百炼</td><td>Qwen 系列，国内稳定，企业级支持</td><td>bailian.aliyun.com</td></tr>
         </tbody>
       </table>
-      <div class="doc-tip">💡 推荐在「配置」页的模型栏填写格式：<span class="doc-code">anthropic/claude-opus-4-5</span>（OpenRouter 格式），或 <span class="doc-code">deepseek-chat</span>（DeepSeek 直连格式）</div>
+      <div class="doc-tip">💡 模型名称格式：OpenRouter 用 <span class="doc-code">anthropic/claude-opus-4-5</span>，DeepSeek 直连用 <span class="doc-code">deepseek-chat</span>，硅基流动用 <span class="doc-code">deepseek-ai/DeepSeek-V3</span></div>
     </div>
 
-    <!-- 工作区文件 -->
-    <div class="doc-section">
+    <!-- ── 工作区文件 ── -->
+    <div class="doc-section" id="doc-workspace">
       <h3>📁 工作区文件说明</h3>
-      <p>PgFlow 的工作区默认在 <span class="doc-code">~/.pgflow/workspace/</span>，你可以直接编辑这些文件来自定义 AI 的行为：</p>
+      <p>工作区默认在 <span class="doc-code">~/.pgflow/workspace/</span>，直接用文本编辑器修改这些文件即可自定义 AI 行为，<strong>无需重启</strong>，下次对话自动生效：</p>
       <table class="doc-table">
-        <thead><tr><th>文件</th><th>作用</th></tr></thead>
+        <thead><tr><th>文件</th><th>作用</th><th>示例内容</th></tr></thead>
         <tbody>
-          <tr><td>SOUL.md</td><td>AI 的人格设定，定义它的名字、说话风格、回复语言等</td></tr>
-          <tr><td>USER.md</td><td>你的个人信息，让 AI 更了解你（职业、习惯、偏好等）</td></tr>
-          <tr><td>MEMORY.md</td><td>AI 的长期记忆，跨会话保留重要信息，会自动更新</td></tr>
-          <tr><td>HEARTBEAT.md</td><td>定时任务配置，让 AI 按计划主动提醒你</td></tr>
-          <tr><td>skills/</td><td>技能包目录，每个子目录放一个 SKILL.md 即可扩展能力</td></tr>
+          <tr><td>SOUL.md</td><td>AI 人格设定</td><td>你叫小助手，说话简洁友好，始终用中文回复</td></tr>
+          <tr><td>USER.md</td><td>你的个人信息</td><td>我是一名设计师，常用 Mac，偏好简洁的回答</td></tr>
+          <tr><td>MEMORY.md</td><td>AI 的长期记忆，自动维护</td><td>AI 会自动更新，无需手动编辑</td></tr>
+          <tr><td>HEARTBEAT.md</td><td>定时任务</td><td>每天早上 9 点发送天气和日程提醒</td></tr>
+          <tr><td>skills/</td><td>技能包目录</td><td>每个子文件夹放一个 SKILL.md 即可扩展功能</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 内置能力 -->
-    <div class="doc-section">
-      <h3>🔧 AI 内置能力</h3>
-      <p>无需安装任何插件，AI 开箱即支持：</p>
-      <ul>
-        <li><strong>读写文件</strong> — 读取、创建、修改工作区内的任意文件</li>
-        <li><strong>执行命令</strong> — 在你的电脑上运行终端命令（可在配置中关闭）</li>
-        <li><strong>搜索网页</strong> — 实时搜索互联网获取最新信息</li>
-        <li><strong>记忆管理</strong> — 自动将重要内容写入 MEMORY.md，跨对话记住你</li>
-        <li><strong>定时任务</strong> — 设置提醒、每日总结等定时行为</li>
-      </ul>
-    </div>
-
-    <!-- 系统托盘 -->
-    <div class="doc-section">
-      <h3>🖥️ 系统托盘说明</h3>
-      <table class="doc-table">
-        <thead><tr><th>操作</th><th>说明</th></tr></thead>
-        <tbody>
-          <tr><td>双击 pgflow.exe</td><td>启动托盘，自动开启网关并打开面板</td></tr>
-          <tr><td>右键 → 打开管理面板</td><td>打开此页面</td></tr>
-          <tr><td>右键 → 重启服务</td><td>修改配置后需要重启网关才能生效</td></tr>
-          <tr><td>右键 → 查看日志</td><td>用记事本打开最新日志文件，排查问题</td></tr>
-          <tr><td>右键 → 开机自启</td><td>打勾后系统启动时自动运行 PgFlow</td></tr>
-          <tr><td>右键 → 退出</td><td>停止网关并退出程序</td></tr>
-        </tbody>
-      </table>
-      <div class="doc-warn">⚠️ 修改配置后必须 <strong>右键托盘 → 重启服务</strong> 才能让新配置生效，仅保存配置文件不会自动重启。</div>
-    </div>
-
-    <!-- 常见问题 -->
-    <div class="doc-section">
+    <!-- ── 常见问题 ── -->
+    <div class="doc-section" id="doc-faq">
       <h3>❓ 常见问题</h3>
       <div class="doc-tip"><strong>Q：Bot 没有响应怎么办？</strong><br>
-        1. 确认网关状态显示「运行中」（状态 Tab）<br>
-        2. 检查 API Key 是否正确填写且有余额<br>
+        1. 面板「状态」Tab 确认网关显示「运行中」<br>
+        2. 检查 API Key 是否正确且账户有余额<br>
         3. 检查 Telegram Token 是否正确，allowFrom 是否包含你的用户 ID<br>
-        4. 右键托盘 → 查看日志，查找红色报错信息
+        4. 查看日志（Windows：右键托盘→查看日志；其他系统：查看终端输出）
       </div>
-      <div class="doc-tip"><strong>Q：如何换用不同的 AI 模型？</strong><br>
-        在「配置」→「AI 模型」中修改模型名称并保存，然后右键托盘重启服务。
-      </div>
-      <div class="doc-tip"><strong>Q：杀毒软件提示威胁怎么办？</strong><br>
-        PgFlow 是用 PyInstaller 打包的 Python 程序，部分杀毒软件会误报。将 pgflow.exe 所在文件夹添加到杀毒软件的白名单（排除列表）即可。
+      <div class="doc-tip"><strong>Q：修改配置后不生效？</strong><br>
+        保存配置后必须重启网关才能生效。Windows 右键托盘→重启服务；其他系统停止再重新运行 <span class="doc-code">pgflow gateway</span>。
       </div>
       <div class="doc-tip"><strong>Q：如何让 AI 说中文 / 改变回复风格？</strong><br>
-        编辑工作区的 <span class="doc-code">SOUL.md</span> 文件，在其中描述你希望 AI 使用的语言和风格，保存后重启服务生效。
+        编辑工作区的 <span class="doc-code">SOUL.md</span>，写入你希望的风格描述，例如「始终用中文回复，语气简洁」，下次对话自动生效。
+      </div>
+      <div class="doc-tip"><strong>Q：Windows 杀毒软件误报？</strong><br>
+        将 <span class="doc-code">pgflow/</span> 文件夹添加到杀毒软件排除列表即可，这是 PyInstaller 程序的常见误报。
+      </div>
+      <div class="doc-tip"><strong>Q：如何更新到新版本？</strong><br>
+        Windows：下载新的 zip 包解压覆盖旧文件夹，保留原有的配置（配置存储在 <span class="doc-code">~/.pgflow/</span>，不在程序文件夹内，不会丢失）。<br>
+        其他系统：进入项目目录运行 <span class="doc-code">git pull && pip3 install -e .</span>
       </div>
     </div>
+
   </div>
 
 </div>
@@ -578,6 +745,11 @@ function copyCmd(el) {
     el.innerText = '已复制 ✓';
     setTimeout(() => { el.innerText = orig; }, 1500);
   });
+}
+
+function scrollToDoc(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 
 function show(name, btn) {
