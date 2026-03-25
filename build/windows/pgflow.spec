@@ -25,6 +25,8 @@ a = Analysis(
         # regardless of PyInstaller's static analysis result.
         # A runtime hook adds this to sys.path so imports work normally.
         (str(ROOT / "nanobot"), "nanobot_src/nanobot"),
+        # Ship litellm Python source as data files — same reason as nanobot above.
+        (str(LITELLM_DIR), "litellm_src/litellm"),
         # Include all template markdown files
         (str(ROOT / "nanobot" / "templates"), "nanobot/templates"),
         # Include built-in skills
