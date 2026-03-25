@@ -16,41 +16,57 @@ from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
-# Icon helpers
+# Icon helpers — colour reflects gateway state
 # ---------------------------------------------------------------------------
 
 def _load_icon(state: str = "running"):
-    """Load tray icon. Returns a PIL Image."""
-    from PIL import Image, ImageDraw
+    """Load tray icon. Returns a PIL Image.
+
+    state: 'running' → full colour, 'stopped' → dimmed, 'starting' → amber
+    """
+    from PIL import Image, ImageDraw, ImageEnhance
 
     # Try to load the project logo
     logo_candidates = []
     if getattr(sys, "frozen", False):
-        # Frozen .exe: _internal folder or next to exe
         logo_candidates += [
             Path(sys._MEIPASS) / "nanobot_logo.png",
             Path(sys.executable).parent / "nanobot_logo.png",
         ]
-    # Dev: repo root
     logo_candidates.append(Path(__file__).parent.parent.parent / "nanobot_logo.png")
 
+    img = None
     for candidate in logo_candidates:
         if candidate.exists():
             try:
                 img = Image.open(candidate).resize((64, 64)).convert("RGBA")
-                if state == "stopped":
-                    from PIL import ImageEnhance
-                    img = ImageEnhance.Brightness(img).enhance(0.4)
-                return img
+                break
             except Exception:
                 pass
 
-    # Fallback: draw a coloured circle
-    size = 64
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    color = (62, 207, 142, 255) if state == "running" else (100, 100, 100, 255)
-    draw.ellipse([4, 4, size - 4, size - 4], fill=color)
+    if img is None:
+        # Fallback: draw a coloured circle
+        size = 64
+        img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        if state == "running":
+            color = (62, 207, 142, 255)   # green
+        elif state == "starting":
+            color = (255, 180, 0, 255)    # amber
+        else:
+            color = (100, 100, 100, 255)  # grey
+        draw.ellipse([4, 4, size - 4, size - 4], fill=color)
+        return img
+
+    # Tint logo to reflect state
+    if state == "stopped":
+        img = ImageEnhance.Brightness(img).enhance(0.35)
+    elif state == "starting":
+        # Warm amber overlay
+        overlay = Image.new("RGBA", img.size, (255, 160, 0, 80))
+        img = Image.alpha_composite(img, overlay)
+    # "running" → logo at full brightness (no change)
+
     return img
 
 
@@ -63,7 +79,6 @@ _dashboard_lock = threading.Lock()
 
 
 def _ensure_dashboard() -> None:
-    """Start the dashboard HTTP server if not already running."""
     global _dashboard_started
     with _dashboard_lock:
         if _dashboard_started:
@@ -103,6 +118,7 @@ def _start_gateway() -> None:
             kwargs["creationflags"] = 0x08000000  # CREATE_NO_WINDOW
         try:
             _gateway_proc = subprocess.Popen([str(exe), "gateway"], **kwargs)
+            _log(f"Gateway started (pid={_gateway_proc.pid})")
         except Exception as e:
             _log(f"Gateway start failed: {e}")
 
@@ -140,6 +156,72 @@ def _log(msg: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Autostart — Windows Registry (HKCU\Software\Microsoft\Windows\CurrentVersion\Run)
+# ---------------------------------------------------------------------------
+
+def _autostart_reg_key() -> str:
+    return "PgFlow"
+
+
+def _autostart_enabled() -> bool:
+    if sys.platform != "win32":
+        return False
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_READ,
+        )
+        winreg.QueryValueEx(key, _autostart_reg_key())
+        winreg.CloseKey(key)
+        return True
+    except FileNotFoundError:
+        return False
+    except Exception as e:
+        _log(f"autostart check failed: {e}")
+        return False
+
+
+def _autostart_enable() -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        exe = str(_exe_path())
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_SET_VALUE,
+        )
+        winreg.SetValueEx(key, _autostart_reg_key(), 0, winreg.REG_SZ, f'"{exe}"')
+        winreg.CloseKey(key)
+        _log("Autostart enabled")
+    except Exception as e:
+        _log(f"autostart enable failed: {e}")
+
+
+def _autostart_disable() -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_SET_VALUE,
+        )
+        try:
+            winreg.DeleteValue(key, _autostart_reg_key())
+        except FileNotFoundError:
+            pass
+        winreg.CloseKey(key)
+        _log("Autostart disabled")
+    except Exception as e:
+        _log(f"autostart disable failed: {e}")
+
+
+# ---------------------------------------------------------------------------
 # Tray menu actions
 # ---------------------------------------------------------------------------
 
@@ -147,19 +229,51 @@ def _open_dashboard(_icon=None, _item=None) -> None:
     webbrowser.open("http://localhost:18791")
 
 
+def _open_logs(_icon=None, _item=None) -> None:
+    """Open the latest log file in the default text editor."""
+    from nanobot.config.paths import get_logs_dir
+    logs_dir = get_logs_dir()
+    try:
+        log_files = sorted(logs_dir.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+        target = log_files[0] if log_files else logs_dir / "tray.log"
+    except Exception:
+        target = Path.home() / ".pgflow" / "tray.log"
+    try:
+        if sys.platform == "win32":
+            subprocess.Popen(["notepad", str(target)])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(target)])
+        else:
+            subprocess.Popen(["xdg-open", str(target)])
+    except Exception as e:
+        _log(f"open logs failed: {e}")
+
+
 def _restart_gateway(icon=None, _item=None) -> None:
+    _log("Restarting gateway…")
+    if icon:
+        icon.icon = _load_icon("starting")
+        icon.title = "PgFlow — 重启中…"
     _stop_gateway()
     time.sleep(1)
     _start_gateway()
 
 
+def _toggle_autostart(_icon=None, _item=None) -> None:
+    if _autostart_enabled():
+        _autostart_disable()
+    else:
+        _autostart_enable()
+
+
 def _quit_app(icon, _item=None) -> None:
+    _log("Quit requested")
     _stop_gateway()
     icon.stop()
 
 
 # ---------------------------------------------------------------------------
-# Status monitor thread
+# Status monitor thread — updates icon colour + tooltip every 5 s
 # ---------------------------------------------------------------------------
 
 def _monitor(icon) -> None:
@@ -234,6 +348,13 @@ def run_tray() -> None:
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("打开管理面板", _open_dashboard, default=True),
             pystray.MenuItem("重启服务", _restart_gateway),
+            pystray.MenuItem("查看日志", _open_logs),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(
+                "开机自启",
+                _toggle_autostart,
+                checked=lambda item: _autostart_enabled(),
+            ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("退出", _quit_app),
         )
@@ -251,7 +372,6 @@ def run_tray() -> None:
     threading.Thread(target=_monitor, args=(icon,), daemon=True).start()
 
     _log("tray icon.run()")
-    # icon.run() blocks the main thread — required on Windows
     try:
         icon.run()
     except Exception as e:
