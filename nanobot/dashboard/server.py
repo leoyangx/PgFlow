@@ -412,56 +412,18 @@ def _get_exe_path():
     return found if found else str(sys.executable)
 
 
-def _find_gateway_process():
+def _gateway_running() -> bool:
     """Detect a running gateway by probing its port (18790).
 
-    This is the fastest and most reliable method: if something is listening
-    on port 18790, the gateway is running. No process scanning needed.
-    Falls back to PowerShell for PID lookup (best-effort, non-blocking).
+    Port probe is sub-millisecond and works regardless of how the gateway
+    was started (tray, CLI, or any other means).
     """
     import socket
-    import sys
-
-    # Primary: port probe — sub-millisecond, works regardless of how gateway was started
     try:
         with socket.create_connection(("127.0.0.1", 18790), timeout=0.5):
-            pass
-        # Port is open — gateway is running. Try to get PID (best-effort).
-        return _find_pid_by_port(18790)
-    except (ConnectionRefusedError, OSError):
-        pass
-
-    return None
-
-
-def _find_pid_by_port(port: int) -> int:
-    """Return PID of process listening on given port, or -1 if unknown."""
-    import subprocess, sys
-    if sys.platform != "win32":
-        return -1
-    try:
-        result = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             f"(Get-NetTCPConnection -LocalPort {port} -State Listen"
-             f" -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess"],
-            capture_output=True, text=True, timeout=3,
-            creationflags=0x08000000,
-        )
-        line = result.stdout.strip()
-        if line.isdigit():
-            return int(line)
-    except Exception:
-        pass
-    return -1
-
-
-def _gateway_running() -> bool:
-    # First check our own managed process
-    with _gateway_lock:
-        if _gateway_proc is not None and _gateway_proc.poll() is None:
             return True
-    # Then scan system processes (catches gateways started by tray or terminal)
-    return _find_gateway_process() is not None
+    except (ConnectionRefusedError, OSError):
+        return False
 
 
 def _start_gateway_proc() -> None:
@@ -547,13 +509,7 @@ def _get_status() -> dict:
 
 
 def _get_gateway() -> dict:
-    # Check our managed process first
-    with _gateway_lock:
-        if _gateway_proc is not None and _gateway_proc.poll() is None:
-            return {"running": True, "pid": _gateway_proc.pid}
-    # Fall back to system-wide scan
-    pid = _find_gateway_process()
-    return {"running": pid is not None, "pid": pid}
+    return {"running": _gateway_running()}
 
 
 def _post_gateway(action: str) -> dict:
