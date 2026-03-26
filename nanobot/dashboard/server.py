@@ -245,6 +245,7 @@ _HTML = r"""<!DOCTYPE html>
         <option value="anthropic">Anthropic（Claude 官方）</option>
         <option value="openai">OpenAI（GPT 系列）</option>
         <option value="gemini">Google Gemini</option>
+        <option value="stepfun">阶跃星辰 Step Fun（国内直连）</option>
         <option value="groq">Groq</option>
         <option value="custom">自定义（OpenAI 兼容接口）</option>
       </select>
@@ -1125,6 +1126,7 @@ const PROVIDER_PRESETS = {
   openai:       { base: '',                                  model: 'gpt-4o',                     needBase: false },
   gemini:       { base: '',                                  model: 'gemini/gemini-2.0-flash',    needBase: false },
   groq:         { base: '',                                  model: 'groq/llama-3.3-70b-versatile', needBase: false },
+  stepfun:      { base: 'https://api.stepfun.com/v1',       model: 'step-2-16k',                 needBase: true  },
   custom:       { base: '',                                  model: '',                           needBase: true  },
 };
 
@@ -1294,7 +1296,7 @@ function collectForm(cfg) {
   if (!cfg.providers) cfg.providers = {};
   // 清除其他 provider 的 apiKey（避免多个同时生效产生歧义），保留 apiBase
   const knownProviders = ['openrouter','anthropic','openai','deepseek','gemini',
-    'zhipu','dashscope','siliconflow','volcengine','moonshot','groq','custom'];
+    'zhipu','dashscope','siliconflow','volcengine','moonshot','groq','stepfun','custom'];
   for (const name of knownProviders) {
     if (cfg.providers[name] && cfg.providers[name].apiKey && name !== provider) {
       cfg.providers[name].apiKey = '';
