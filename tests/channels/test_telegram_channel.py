@@ -271,7 +271,8 @@ async def test_send_text_gives_up_after_max_retries() -> None:
     orig_delay = tg_mod._SEND_RETRY_BASE_DELAY
     tg_mod._SEND_RETRY_BASE_DELAY = 0.01
     try:
-        await channel._send_text(123, "hello", None, {})
+        with pytest.raises(TimedOut):
+            await channel._send_text(123, "hello", None, {})
     finally:
         tg_mod._SEND_RETRY_BASE_DELAY = orig_delay
 
