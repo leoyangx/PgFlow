@@ -318,7 +318,6 @@ PgFlow/
 
 欢迎提交 Issue 和 PR：[https://github.com/leoyangx/PgFlow/issues](https://github.com/leoyangx/PgFlow/issues)
 
-同步上游更新请参考 [MAINTAINER_GUIDE.md](./MAINTAINER_GUIDE.md)。
 
 ## 📄 许可证
 
