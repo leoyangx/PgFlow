@@ -249,13 +249,6 @@ def _open_logs(_icon=None, _item=None) -> None:
         _log(f"open logs failed: {e}")
 
 
-def _start_gateway_action(icon=None, _item=None) -> None:
-    _log("Starting gateway from tray menu…")
-    if icon:
-        icon.icon = _load_icon("starting")
-        icon.title = "PgFlow — 启动中…"
-    _start_gateway()
-
 
 def _restart_gateway(icon=None, _item=None) -> None:
     _log("Restarting gateway…")
@@ -338,37 +331,24 @@ def run_tray() -> None:
 
     threading.Thread(target=_open_browser_deferred, daemon=True).start()
 
-    # Build tray menu
-    if first_run:
-        menu = pystray.Menu(
-            pystray.MenuItem("🌊 PgFlow", None, enabled=False),
-            pystray.MenuItem("首次运行 — 请完成配置", None, enabled=False),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("打开配置向导", _open_dashboard, default=True),
-            pystray.MenuItem("启动网关", _start_gateway_action),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("退出", _quit_app),
-        )
-        title = "PgFlow — 请完成初始配置"
-        state = "stopped"
-    else:
-        menu = pystray.Menu(
-            pystray.MenuItem("🌊 PgFlow", None, enabled=False),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("打开管理面板", _open_dashboard, default=True),
-            pystray.MenuItem("重启服务", _restart_gateway),
-            pystray.MenuItem("查看日志", _open_logs),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem(
-                "开机自启",
-                _toggle_autostart,
-                checked=lambda item: _autostart_enabled(),
-            ),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("退出", _quit_app),
-        )
-        title = "PgFlow — 运行中"
-        state = "running"
+    # Build tray menu — unified menu regardless of first-run state
+    menu = pystray.Menu(
+        pystray.MenuItem("🌊 PgFlow", None, enabled=False),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("打开管理面板", _open_dashboard, default=True),
+        pystray.MenuItem("重启服务", _restart_gateway),
+        pystray.MenuItem("查看日志", _open_logs),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem(
+            "开机自启",
+            _toggle_autostart,
+            checked=lambda item: _autostart_enabled(),
+        ),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("退出", _quit_app),
+    )
+    title = "PgFlow — 请完成初始配置" if first_run else "PgFlow — 运行中"
+    state = "stopped" if first_run else "running"
 
     icon = pystray.Icon(
         name="pgflow",
