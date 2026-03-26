@@ -424,7 +424,6 @@ PROVIDERS: tuple[ProviderSpec, ...] = (
         keywords=("stepfun", "step"),
         env_key="STEPFUN_API_KEY",
         display_name="Step Fun",
-        backend="openai_compat",
         default_api_base="https://api.stepfun.com/v1",
     ),
     # === Local deployment (matched by config key, NOT by api_base) =========
