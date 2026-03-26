@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -213,7 +214,13 @@ _HTML = r"""<!DOCTYPE html>
     </div>
     <div id="ver-update-row" class="row" style="display:none">
       <label>新版提示</label>
-      <a id="ver-update-link" href="#" target="_blank" class="btn btn-green" style="text-decoration:none;font-size:13px">⬇ 下载新版本</a>
+      <button id="ver-update-btn" class="btn btn-green" onclick="startUpdate()" style="font-size:13px">⬇ 一键更新</button>
+    </div>
+    <div id="ver-update-progress" style="display:none;margin-top:12px">
+      <div style="background:#0a0c15;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px">
+        <div id="ver-progress-bar" style="height:100%;width:0%;background:var(--green);transition:width .3s"></div>
+      </div>
+      <div id="ver-progress-msg" style="font-size:12px;color:var(--muted)"></div>
     </div>
   </div>
 </div>
@@ -1021,13 +1028,15 @@ async function loadGatewayStatus() {
 }
 
 // ── Version Check ───────────────────────────────────────────────────────────
+let _updateUrl = '';
+let _updatePollTimer = null;
+
 async function loadVersionInfo() {
   try {
     const d = await api('/api/version');
     const elCurrent = document.getElementById('ver-current');
     const elLatest  = document.getElementById('ver-latest');
     const elRow     = document.getElementById('ver-update-row');
-    const elLink    = document.getElementById('ver-update-link');
 
     elCurrent.innerHTML = `<code>v${d.current}</code>`;
 
@@ -1035,8 +1044,7 @@ async function loadVersionInfo() {
       elLatest.innerHTML = `<span class="badge gray">无法获取（请检查网络）</span>`;
     } else if (d.update_available) {
       elLatest.innerHTML = `<span class="badge amber">v${d.latest} 有新版本</span>`;
-      elLink.href = d.release_url;
-      elLink.textContent = `⬇ 下载 v${d.latest}`;
+      _updateUrl = d.release_url;
       elRow.style.display = 'flex';
     } else {
       elLatest.innerHTML = `<span class="badge green">v${d.latest} 已是最新</span>`;
@@ -1046,6 +1054,38 @@ async function loadVersionInfo() {
     const elLatest = document.getElementById('ver-latest');
     if (elLatest) elLatest.innerHTML = `<span class="badge gray">检测失败</span>`;
   }
+}
+
+async function startUpdate() {
+  if (!_updateUrl) return;
+  const btn = document.getElementById('ver-update-btn');
+  btn.disabled = true;
+  btn.textContent = '更新中…';
+  document.getElementById('ver-update-progress').style.display = 'block';
+
+  await api('/api/update/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url: _updateUrl}),
+  });
+
+  // Poll for progress
+  _updatePollTimer = setInterval(async () => {
+    const s = await api('/api/update/status');
+    document.getElementById('ver-progress-bar').style.width = s.progress + '%';
+    document.getElementById('ver-progress-msg').textContent = s.message;
+
+    if (s.status === 'done') {
+      clearInterval(_updatePollTimer);
+      btn.textContent = '✓ 已更新';
+      document.getElementById('ver-progress-msg').style.color = 'var(--green)';
+    } else if (s.status === 'error') {
+      clearInterval(_updatePollTimer);
+      btn.disabled = false;
+      btn.textContent = '⬇ 一键更新';
+      document.getElementById('ver-progress-msg').style.color = 'var(--red)';
+    }
+  }, 800);
 }
 
 // ── Skills ─────────────────────────────────────────────────────────────────
@@ -1859,6 +1899,105 @@ def _get_logs() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Auto-updater
+# ---------------------------------------------------------------------------
+
+_update_state: dict = {"status": "idle", "progress": 0, "message": ""}
+
+
+def _get_update_status() -> dict:
+    return dict(_update_state)
+
+
+def _do_update(download_url: str) -> None:
+    """Download zip, extract, replace files next to exe, then prompt restart."""
+    import shutil
+    import tempfile
+    import urllib.request
+    import zipfile
+
+    def _set(status: str, progress: int, message: str) -> None:
+        _update_state["status"] = status
+        _update_state["progress"] = progress
+        _update_state["message"] = message
+
+    try:
+        _set("downloading", 5, "正在下载更新包…")
+
+        # Determine install dir (where pgflow.exe lives)
+        if getattr(sys, "frozen", False):
+            install_dir = Path(sys.executable).parent
+        else:
+            _set("error", 0, "仅打包版本支持自动更新，请手动下载")
+            return
+
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = Path(tmp) / "update.zip"
+
+            # Download with progress
+            req = urllib.request.Request(
+                download_url, headers={"User-Agent": "PgFlow-Updater"}
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                total = int(resp.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk = 65536
+                with open(zip_path, "wb") as f:
+                    while True:
+                        data = resp.read(chunk)
+                        if not data:
+                            break
+                        f.write(data)
+                        downloaded += len(data)
+                        if total:
+                            pct = 5 + int(downloaded / total * 50)
+                            _set("downloading", pct, f"下载中… {downloaded // 1048576} MB / {total // 1048576} MB")
+
+            _set("extracting", 60, "正在解压…")
+
+            extract_dir = Path(tmp) / "extracted"
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall(extract_dir)
+
+            # Find the top-level folder inside zip (e.g. "pgflow/")
+            children = list(extract_dir.iterdir())
+            src_dir = children[0] if len(children) == 1 and children[0].is_dir() else extract_dir
+
+            _set("installing", 70, "正在替换文件…")
+
+            # Replace _internal/ first, then exe
+            src_internal = src_dir / "_internal"
+            dst_internal = install_dir / "_internal"
+            if src_internal.exists() and dst_internal.exists():
+                shutil.rmtree(dst_internal)
+                shutil.copytree(src_internal, dst_internal)
+
+            src_exe = src_dir / "pgflow.exe"
+            dst_exe  = install_dir / "pgflow.exe"
+            if src_exe.exists():
+                # On Windows the running exe is locked; rename then copy
+                old_exe = install_dir / "pgflow.exe.old"
+                old_exe.unlink(missing_ok=True)
+                dst_exe.rename(old_exe)
+                shutil.copy2(src_exe, dst_exe)
+
+            _set("done", 100, "更新完成！请重启 PgFlow 生效。")
+
+    except Exception as e:
+        _update_state["status"] = "error"
+        _update_state["progress"] = 0
+        _update_state["message"] = f"更新失败：{e}"
+
+
+def _start_update(download_url: str) -> dict:
+    if _update_state["status"] in ("downloading", "extracting", "installing"):
+        return {"ok": False, "error": "正在更新中，请稍候"}
+    _update_state.update({"status": "idle", "progress": 0, "message": ""})
+    threading.Thread(target=_do_update, args=(download_url,), daemon=True).start()
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
 # HTTP request handler
 # ---------------------------------------------------------------------------
 
@@ -1907,6 +2046,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(_get_config_raw())
         elif path == "/api/logs":
             self._send_json(_get_logs())
+        elif path == "/api/update/status":
+            self._send_json(_get_update_status())
         else:
             self.send_response(404)
             self.end_headers()
@@ -1924,6 +2065,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(_post_skills(body.get("name", ""), body.get("enabled", True)))
         elif path == "/api/config/save":
             self._send_json(_save_config(body.get("raw", "")))
+        elif path == "/api/update/start":
+            self._send_json(_start_update(body.get("url", "")))
         else:
             self.send_response(404)
             self.end_headers()
