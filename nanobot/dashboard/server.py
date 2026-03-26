@@ -546,142 +546,6 @@ _HTML = r"""<!DOCTYPE html>
     </div>
 
   </div>
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="channel-arrow" id="ch-telegram-arrow">▶</span>
-      </div>
-      <div class="channel-body" id="ch-telegram-body" style="display:none">
-        <div class="form-group">
-          <label class="form-label">Bot Token <span class="form-hint">向 @BotFather 获取</span></label>
-          <div class="input-eye">
-            <input id="ch-telegram-token" type="password" class="form-input" placeholder="123456:ABC-DEF...">
-            <button class="eye-btn" onclick="toggleEye('ch-telegram-token', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔，留空拒绝所有人，填 * 允许所有人</span></label>
-          <input id="ch-telegram-allow" type="text" class="form-input" placeholder="123456789, 987654321">
-        </div>
-      </div>
-    </div>
-
-    <!-- Discord -->
-    <div class="channel-block" id="ch-discord">
-      <div class="channel-header" onclick="toggleChannel('discord')">
-        <span class="channel-icon">🎮</span>
-        <span class="channel-name">Discord</span>
-        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
-          <input type="checkbox" id="ch-discord-enabled" onchange="onChannelToggle('discord', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="channel-arrow" id="ch-discord-arrow">▶</span>
-      </div>
-      <div class="channel-body" id="ch-discord-body" style="display:none">
-        <div class="doc-tip" style="margin-bottom:12px">在 Discord 开发者平台创建应用，启用 <strong>Message Content Intent</strong> 权限，复制 Bot Token。</div>
-        <div class="form-group">
-          <label class="form-label">Bot Token</label>
-          <div class="input-eye">
-            <input id="ch-discord-token" type="password" class="form-input" placeholder="你的 Discord Bot Token">
-            <button class="eye-btn" onclick="toggleEye('ch-discord-token', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">允许的用户 ID <span class="form-hint">逗号分隔</span></label>
-          <input id="ch-discord-allow" type="text" class="form-input" placeholder="123456789">
-        </div>
-      </div>
-    </div>
-
-    <!-- Slack -->
-    <div class="channel-block" id="ch-slack">
-      <div class="channel-header" onclick="toggleChannel('slack')">
-        <span class="channel-icon">💬</span>
-        <span class="channel-name">Slack</span>
-        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
-          <input type="checkbox" id="ch-slack-enabled" onchange="onChannelToggle('slack', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="channel-arrow" id="ch-slack-arrow">▶</span>
-      </div>
-      <div class="channel-body" id="ch-slack-body" style="display:none">
-        <div class="form-group">
-          <label class="form-label">Bot Token <span class="form-hint">xoxb- 开头</span></label>
-          <div class="input-eye">
-            <input id="ch-slack-token" type="password" class="form-input" placeholder="xoxb-...">
-            <button class="eye-btn" onclick="toggleEye('ch-slack-token', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">App-Level Token <span class="form-hint">xapp- 开头</span></label>
-          <div class="input-eye">
-            <input id="ch-slack-apptoken" type="password" class="form-input" placeholder="xapp-...">
-            <button class="eye-btn" onclick="toggleEye('ch-slack-apptoken', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 飞书 -->
-    <div class="channel-block" id="ch-feishu">
-      <div class="channel-header" onclick="toggleChannel('feishu')">
-        <span class="channel-icon">🪶</span>
-        <span class="channel-name">飞书 Feishu</span>
-        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
-          <input type="checkbox" id="ch-feishu-enabled" onchange="onChannelToggle('feishu', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="channel-arrow" id="ch-feishu-arrow">▶</span>
-      </div>
-      <div class="channel-body" id="ch-feishu-body" style="display:none">
-        <div class="form-group">
-          <label class="form-label">App ID</label>
-          <input id="ch-feishu-appid" type="text" class="form-input" placeholder="cli_...">
-        </div>
-        <div class="form-group">
-          <label class="form-label">App Secret</label>
-          <div class="input-eye">
-            <input id="ch-feishu-secret" type="password" class="form-input" placeholder="App Secret">
-            <button class="eye-btn" onclick="toggleEye('ch-feishu-secret', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 邮件 -->
-    <div class="channel-block" id="ch-email">
-      <div class="channel-header" onclick="toggleChannel('email')">
-        <span class="channel-icon">📧</span>
-        <span class="channel-name">邮件 Email</span>
-        <label class="toggle" onclick="event.stopPropagation()" title="启用/禁用">
-          <input type="checkbox" id="ch-email-enabled" onchange="onChannelToggle('email', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="channel-arrow" id="ch-email-arrow">▶</span>
-      </div>
-      <div class="channel-body" id="ch-email-body" style="display:none">
-        <div class="form-group">
-          <label class="form-label">IMAP 服务器</label>
-          <input id="ch-email-imap" type="text" class="form-input" placeholder="imap.gmail.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">SMTP 服务器</label>
-          <input id="ch-email-smtp" type="text" class="form-input" placeholder="smtp.gmail.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">邮箱地址</label>
-          <input id="ch-email-addr" type="text" class="form-input" placeholder="you@gmail.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">密码 / 授权码</label>
-          <div class="input-eye">
-            <input id="ch-email-pass" type="password" class="form-input" placeholder="应用专用密码">
-            <button class="eye-btn" onclick="toggleEye('ch-email-pass', this)" title="显示/隐藏">👁</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
 
   <!-- 区块③：高级设置 -->
   <div class="card">
@@ -1818,11 +1682,16 @@ def _get_status() -> dict:
             status["soul_md"] = (ws / "SOUL.md").exists()
             status["user_md"] = (ws / "USER.md").exists()
             status["memory_md"] = (ws / "memory" / "MEMORY.md").exists()
-            # 渠道启用状态
-            channels_cfg = cfg.model_dump(mode="json", by_alias=True).get("channels", {})
-            status["channels_enabled"] = {
-                k: bool(v.get("enabled")) for k, v in channels_cfg.items()
-            }
+            # 渠道启用状态 — 直接从原始 JSON 读取，避免 Pydantic extra-fields 转换问题
+            try:
+                raw_cfg = json.loads(config_path.read_text(encoding="utf-8"))
+                raw_channels = raw_cfg.get("channels", {})
+                status["channels_enabled"] = {
+                    k: bool(v.get("enabled")) if isinstance(v, dict) else False
+                    for k, v in raw_channels.items()
+                }
+            except Exception:
+                pass
         except Exception:
             pass
 
