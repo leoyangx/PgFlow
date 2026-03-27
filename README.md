@@ -14,7 +14,7 @@
 </div>
 
 > **致谢 / Acknowledgement**
-> PgFlow 基于 [HKUDS/nanobot](https://github.com/HKUDS/nanobot) 二次开发，在此对原作者及所有贡献者表示衷心感谢。
+> PgFlow 基于 [HKUDS/nanobot](https://github.com/HKUDS/nanobot) 二次开发。
 > PgFlow is built upon [HKUDS/nanobot](https://github.com/HKUDS/nanobot). We sincerely thank the original authors and contributors.
 
 ---
