@@ -7,7 +7,27 @@
       "Bash(pip show:*)",
       "Read(//c/Users/luck/.pgflow/**)",
       "Bash(python:*)",
-      "Bash(git -C \"C:\\\\Users\\\\luck\\\\Desktop\\\\nanobot\" remote -v)"
+      "Bash(git -C \"C:\\\\Users\\\\luck\\\\Desktop\\\\nanobot\" remote -v)",
+      "Bash(ls C:/Users/luck/Desktop/nanobot/nanobot/channels/*.py)",
+      "Bash(ls C:/Users/luck/Desktop/PgFlow/nanobot/channels/*.py)",
+      "Bash(find /c/Users/luck/Desktop/nanobot -name *.py)",
+      "Bash(cp \"C:/Users/luck/Desktop/nanobot/tests/agent/test_loop_cron_timezone.py\" \"C:/Users/luck/Desktop/PgFlow/tests/agent/test_loop_cron_timezone.py\")",
+      "Bash(cp \"C:/Users/luck/Desktop/nanobot/tests/agent/test_runner.py\" \"C:/Users/luck/Desktop/PgFlow/tests/agent/test_runner.py\")",
+      "Bash(cp \"C:/Users/luck/Desktop/nanobot/tests/channels/test_channel_manager_delta_coalescing.py\" \"C:/Users/luck/Desktop/PgFlow/tests/channels/test_channel_manager_delta_coalescing.py\")",
+      "Bash(cp \"C:/Users/luck/Desktop/nanobot/tests/channels/test_feishu_streaming.py\" \"C:/Users/luck/Desktop/PgFlow/tests/channels/test_feishu_streaming.py\")",
+      "WebFetch(domain:leoyangx.github.io)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(uv run:*)",
+      "Bash(uv sync:*)",
+      "Bash(/c/Users/luck/Desktop/PgFlow/.venv/Scripts/pytest.exe --version)",
+      "Bash(uv add:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }
