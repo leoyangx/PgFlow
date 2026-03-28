@@ -1,5 +1,5 @@
 {
   "version": "0.1.2",
-  "download_url": "",
+  "download_url": "https://github.com/leoyangx/PgFlow/releases/download/v0.1.2/pgflow-v0.1.2-windows.zip",
   "release_notes": "移除 litellm 依赖，改用原生 openai + anthropic SDK；同步上游 AgentRunner/AgentHook 架构；完善飞书 CardKit 流式推送、邮件 SPF/DKIM 验证；新增 AiHubMix/MiniMax/Mistral/硅基流动/火山引擎/阶跃星辰服务商支持；Dashboard 新增 MCP 管理、日志过滤、14 渠道教程；托盘菜单动态网关控制"
 }
