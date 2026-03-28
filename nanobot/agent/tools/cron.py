@@ -12,8 +12,9 @@ from nanobot.cron.types import CronJobState, CronSchedule
 class CronTool(Tool):
     """Tool to schedule reminders and recurring tasks."""
 
-    def __init__(self, cron_service: CronService):
+    def __init__(self, cron_service: CronService, default_timezone: str | None = None):
         self._cron = cron_service
+        self._default_timezone = default_timezone
         self._channel = ""
         self._chat_id = ""
         self._in_cron_context: ContextVar[bool] = ContextVar("cron_in_context", default=False)

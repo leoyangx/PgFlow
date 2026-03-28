@@ -23,6 +23,8 @@ def _make_config() -> EmailConfig:
         smtp_username="bot@example.com",
         smtp_password="secret",
         mark_seen=True,
+        verify_dkim=False,
+        verify_spf=False,
     )
 
 
