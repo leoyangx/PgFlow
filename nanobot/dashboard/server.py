@@ -2536,8 +2536,9 @@ def _get_version_info() -> dict:
                 data = _json.loads(resp.read())
             latest_tag = data.get("version", "").lstrip("v")
             result["latest"] = latest_tag
-            result["release_url"] = data.get("download_url", result["release_url"])
-            if latest_tag and latest_tag != __version__:
+            download_url = data.get("download_url", "")
+            result["release_url"] = download_url or result["release_url"]
+            if latest_tag and latest_tag != __version__ and download_url:
                 def _parse(v):
                     try:
                         return tuple(int(x) for x in v.split(".")[:3])
@@ -2703,6 +2704,17 @@ def _do_update(download_url: str) -> None:
             install_dir = Path(sys.executable).parent
         else:
             _set("error", 0, "仅打包版本支持自动更新，请手动下载")
+            return
+
+        # Verify download URL is reachable before starting
+        try:
+            head_req = urllib.request.Request(
+                download_url, headers={"User-Agent": "PgFlow-Updater"}, method="HEAD"
+            )
+            with urllib.request.urlopen(head_req, timeout=10):
+                pass
+        except Exception as e:
+            _set("error", 0, f"更新包不可达，请前往 GitHub Releases 手动下载：{e}")
             return
 
         with tempfile.TemporaryDirectory() as tmp:

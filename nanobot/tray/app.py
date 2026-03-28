@@ -232,12 +232,13 @@ def _open_dashboard(_icon=None, _item=None) -> None:
 def _open_logs(_icon=None, _item=None) -> None:
     """Open the latest log file in the default text editor."""
     from nanobot.config.paths import get_logs_dir
-    logs_dir = get_logs_dir()
+    tray_log = Path.home() / ".pgflow" / "tray.log"
     try:
+        logs_dir = get_logs_dir()
         log_files = sorted(logs_dir.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
-        target = log_files[0] if log_files else logs_dir / "tray.log"
+        target = log_files[0] if log_files else tray_log
     except Exception:
-        target = Path.home() / ".pgflow" / "tray.log"
+        target = tray_log
     try:
         if sys.platform == "win32":
             subprocess.Popen(["notepad", str(target)])
