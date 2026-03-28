@@ -472,17 +472,6 @@ PgFlow/
 └── version.json        # GitHub Pages 版本检查文件
 ```
 
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 PR：[https://github.com/leoyangx/PgFlow/issues](https://github.com/leoyangx/PgFlow/issues)
-
----
-
-## 📄 许可证
-
-MIT — 详见 [LICENSE](./LICENSE)
 
 ---
 
