@@ -9,9 +9,8 @@ from typer.testing import CliRunner
 from nanobot.bus.events import OutboundMessage
 from nanobot.cli.commands import _make_provider, app
 from nanobot.config.schema import Config
-from nanobot.providers.litellm_provider import LiteLLMProvider
 from nanobot.providers.openai_codex_provider import _strip_model_prefix
-from nanobot.providers.registry import find_by_model, find_by_name
+from nanobot.providers.registry import find_by_name
 
 runner = CliRunner()
 
@@ -308,21 +307,6 @@ def test_config_falls_back_to_vllm_when_ollama_not_configured():
     assert config.get_api_base() == "http://localhost:8000"
 
 
-def test_find_by_model_prefers_explicit_prefix_over_generic_codex_keyword():
-    spec = find_by_model("github-copilot/gpt-5.3-codex")
-
-    assert spec is not None
-    assert spec.name == "github_copilot"
-
-
-def test_litellm_provider_canonicalizes_github_copilot_hyphen_prefix():
-    provider = LiteLLMProvider(default_model="github-copilot/gpt-5.3-codex")
-
-    resolved = provider._resolve_model("github-copilot/gpt-5.3-codex")
-
-    assert resolved == "github_copilot/gpt-5.3-codex"
-
-
 def test_openai_codex_strip_prefix_supports_hyphen_and_underscore():
     assert _strip_model_prefix("openai-codex/gpt-5.1-codex") == "gpt-5.1-codex"
     assert _strip_model_prefix("openai_codex/gpt-5.1-codex") == "gpt-5.1-codex"
@@ -345,7 +329,7 @@ def test_make_provider_passes_extra_headers_to_custom_provider():
         }
     )
 
-    with patch("nanobot.providers.custom_provider.AsyncOpenAI") as mock_async_openai:
+    with patch("nanobot.providers.openai_compat_provider.AsyncOpenAI") as mock_async_openai:
         _make_provider(config)
 
     kwargs = mock_async_openai.call_args.kwargs

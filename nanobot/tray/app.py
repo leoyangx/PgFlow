@@ -260,6 +260,21 @@ def _restart_gateway(icon=None, _item=None) -> None:
     _start_gateway()
 
 
+def _gateway_menu_label(_item=None) -> str:
+    return "重启网关" if _gateway_running() else "开启网关"
+
+
+def _gateway_menu_action(icon=None, _item=None) -> None:
+    if _gateway_running():
+        _restart_gateway(icon, _item)
+    else:
+        _log("Starting gateway…")
+        if icon:
+            icon.icon = _load_icon("starting")
+            icon.title = "PgFlow — 启动中…"
+        _start_gateway()
+
+
 def _toggle_autostart(_icon=None, _item=None) -> None:
     if _autostart_enabled():
         _autostart_disable()
@@ -336,7 +351,7 @@ def run_tray() -> None:
         pystray.MenuItem("🌊 PgFlow", None, enabled=False),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("打开管理面板", _open_dashboard, default=True),
-        pystray.MenuItem("重启服务", _restart_gateway),
+        pystray.MenuItem(_gateway_menu_label, _gateway_menu_action),
         pystray.MenuItem("查看日志", _open_logs),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(

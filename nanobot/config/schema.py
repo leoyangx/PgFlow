@@ -41,6 +41,7 @@ class AgentDefaults(Base):
     temperature: float = 0.1
     max_tool_iterations: int = 40
     reasoning_effort: str | None = None  # low / medium / high - enables LLM thinking mode
+    timezone: str | None = None  # IANA timezone name (e.g. "Asia/Shanghai") for time display
 
 
 class AgentsConfig(Base):
@@ -251,8 +252,7 @@ class Config(BaseSettings):
         if p and p.api_base:
             return p.api_base
         # Only gateways get a default api_base here. Standard providers
-        # (like Moonshot) set their base URL via env vars in _setup_env
-        # to avoid polluting the global litellm.api_base.
+        # (like Moonshot) set their base URL via provider registry defaults.
         if name:
             spec = find_by_name(name)
             if spec and (spec.is_gateway or spec.is_local) and spec.default_api_base:
