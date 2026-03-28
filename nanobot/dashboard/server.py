@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import webbrowser
@@ -2685,9 +2686,11 @@ def _get_update_status() -> dict:
 
 
 def _do_update(download_url: str) -> None:
-    """Download zip, extract, replace files next to exe, then prompt restart."""
-    import shutil
-    import tempfile
+    """Download zip, extract to temp dir, write updater.bat, then exit.
+
+    The bat script runs after pgflow exits: waits 2 s, replaces _internal/ and
+    pgflow.exe (all file locks released), then restarts pgflow.
+    """
     import urllib.request
     import zipfile
 
@@ -2699,12 +2702,13 @@ def _do_update(download_url: str) -> None:
     try:
         _set("downloading", 5, "正在下载更新包…")
 
-        # Determine install dir (where pgflow.exe lives)
-        if getattr(sys, "frozen", False):
-            install_dir = Path(sys.executable).parent
-        else:
+        # Only supported when running as a frozen exe
+        if not getattr(sys, "frozen", False):
             _set("error", 0, "仅打包版本支持自动更新，请手动下载")
             return
+
+        install_dir = Path(sys.executable).parent
+        exe_path = Path(sys.executable)
 
         # Verify download URL is reachable before starting
         try:
@@ -2717,57 +2721,91 @@ def _do_update(download_url: str) -> None:
             _set("error", 0, f"更新包不可达，请前往 GitHub Releases 手动下载：{e}")
             return
 
-        with tempfile.TemporaryDirectory() as tmp:
-            zip_path = Path(tmp) / "update.zip"
+        # Use a persistent temp dir (not TemporaryDirectory) so bat can access it after exit
+        tmp_root = Path.home() / ".pgflow" / "update_tmp"
+        if tmp_root.exists():
+            import shutil as _shutil
+            _shutil.rmtree(tmp_root, ignore_errors=True)
+        tmp_root.mkdir(parents=True, exist_ok=True)
 
-            # Download with progress
-            req = urllib.request.Request(
-                download_url, headers={"User-Agent": "PgFlow-Updater"}
-            )
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                total = int(resp.headers.get("Content-Length", 0))
-                downloaded = 0
-                chunk = 65536
-                with open(zip_path, "wb") as f:
-                    while True:
-                        data = resp.read(chunk)
-                        if not data:
-                            break
-                        f.write(data)
-                        downloaded += len(data)
-                        if total:
-                            pct = 5 + int(downloaded / total * 50)
-                            _set("downloading", pct, f"下载中… {downloaded // 1048576} MB / {total // 1048576} MB")
+        zip_path = tmp_root / "update.zip"
 
-            _set("extracting", 60, "正在解压…")
+        # Download with progress
+        req = urllib.request.Request(
+            download_url, headers={"User-Agent": "PgFlow-Updater"}
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            total = int(resp.headers.get("Content-Length", 0))
+            downloaded = 0
+            chunk = 65536
+            with open(zip_path, "wb") as f:
+                while True:
+                    data = resp.read(chunk)
+                    if not data:
+                        break
+                    f.write(data)
+                    downloaded += len(data)
+                    if total:
+                        pct = 5 + int(downloaded / total * 50)
+                        _set("downloading", pct, f"下载中… {downloaded // 1048576} MB / {total // 1048576} MB")
 
-            extract_dir = Path(tmp) / "extracted"
-            with zipfile.ZipFile(zip_path, "r") as zf:
-                zf.extractall(extract_dir)
+        _set("extracting", 60, "正在解压…")
 
-            # Find the top-level folder inside zip (e.g. "pgflow/")
-            children = list(extract_dir.iterdir())
-            src_dir = children[0] if len(children) == 1 and children[0].is_dir() else extract_dir
+        extract_dir = tmp_root / "extracted"
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(extract_dir)
 
-            _set("installing", 70, "正在替换文件…")
+        # Find the top-level folder inside zip (e.g. "pgflow/")
+        children = list(extract_dir.iterdir())
+        src_dir = children[0] if len(children) == 1 and children[0].is_dir() else extract_dir
 
-            # Replace _internal/ first, then exe
-            src_internal = src_dir / "_internal"
-            dst_internal = install_dir / "_internal"
-            if src_internal.exists() and dst_internal.exists():
-                shutil.rmtree(dst_internal)
-                shutil.copytree(src_internal, dst_internal)
+        src_internal = src_dir / "_internal"
+        src_exe = src_dir / "pgflow.exe"
 
-            src_exe = src_dir / "pgflow.exe"
-            dst_exe  = install_dir / "pgflow.exe"
-            if src_exe.exists():
-                # On Windows the running exe is locked; rename then copy
-                old_exe = install_dir / "pgflow.exe.old"
-                old_exe.unlink(missing_ok=True)
-                dst_exe.rename(old_exe)
-                shutil.copy2(src_exe, dst_exe)
+        _set("installing", 80, "正在准备更新脚本…")
 
-            _set("done", 100, "更新完成！请重启 PgFlow 生效。")
+        # Write updater.bat — runs after pgflow exits, replaces files, restarts
+        bat_path = tmp_root / "updater.bat"
+        bat_lines = [
+            "@echo off",
+            "timeout /t 2 /nobreak >nul",
+            # Replace _internal/
+        ]
+        if src_internal.exists():
+            bat_lines += [
+                f'rd /S /Q "{install_dir}\\_internal"',
+                f'xcopy /E /I /Y /Q "{src_internal}" "{install_dir}\\_internal\\"',
+            ]
+        if src_exe.exists():
+            bat_lines += [
+                # Rename running exe aside, copy new one
+                f'if exist "{install_dir}\\pgflow.exe.old" del /F /Q "{install_dir}\\pgflow.exe.old"',
+                f'move /Y "{install_dir}\\pgflow.exe" "{install_dir}\\pgflow.exe.old"',
+                f'copy /Y "{src_exe}" "{install_dir}\\pgflow.exe"',
+            ]
+        bat_lines += [
+            # Clean up temp dir
+            f'rd /S /Q "{tmp_root}"',
+            # Restart pgflow
+            f'start "" "{install_dir}\\pgflow.exe"',
+            "exit",
+        ]
+        bat_path.write_text("\r\n".join(bat_lines), encoding="gbk")
+
+        _set("done", 100, "下载完成，PgFlow 即将退出并自动重启完成更新…")
+
+        # Launch bat detached, then exit this process after a short delay
+        import subprocess as _sp
+        _sp.Popen(
+            ["cmd.exe", "/C", str(bat_path)],
+            creationflags=0x00000008,  # DETACHED_PROCESS
+            close_fds=True,
+        )
+
+        # Give the browser time to receive the 'done' status before we exit
+        import time as _time
+        _time.sleep(2)
+        os.kill(os.getpid(), 9)  # Hard exit — all file handles released immediately
 
     except Exception as e:
         _update_state["status"] = "error"
