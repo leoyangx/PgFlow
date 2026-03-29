@@ -27,7 +27,9 @@
       "Bash(uv sync:*)",
       "Bash(/c/Users/luck/Desktop/PgFlow/.venv/Scripts/pytest.exe --version)",
       "Bash(uv add:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(git tag:*)"
     ]
   }
 }
