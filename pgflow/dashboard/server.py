@@ -2815,8 +2815,8 @@ def _do_update(download_url: str) -> None:
         bat_lines += [
             # Clean up temp dir
             f'rd /S /Q "{tmp_root}"',
-            # Restart pgflow
-            f'start "" "{install_dir}\\pgflow.exe"',
+            # Restart via explorer.exe to ensure full Win32 shell context for tray icon
+            f'start "" "explorer.exe" "{install_dir}\\pgflow.exe"',
             "exit",
         ]
         bat_path.write_text("\r\n".join(bat_lines), encoding="gbk")
