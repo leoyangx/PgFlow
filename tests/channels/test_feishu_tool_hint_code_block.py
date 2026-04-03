@@ -8,7 +8,7 @@ from pytest import mark
 
 # Check optional Feishu dependencies before running tests
 try:
-    from nanobot.channels import feishu
+    from pgflow.channels import feishu
     FEISHU_AVAILABLE = getattr(feishu, "FEISHU_AVAILABLE", False)
 except ImportError:
     FEISHU_AVAILABLE = False
@@ -16,8 +16,8 @@ except ImportError:
 if not FEISHU_AVAILABLE:
     pytest.skip("Feishu dependencies not installed (lark-oapi)", allow_module_level=True)
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.channels.feishu import FeishuChannel
+from pgflow.bus.events import OutboundMessage
+from pgflow.channels.feishu import FeishuChannel
 
 
 @pytest.fixture

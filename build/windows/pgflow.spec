@@ -3,42 +3,37 @@
 # Usage: pyinstaller build/windows/pgflow.spec
 
 import sys
-import litellm
+import pgflow
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 ROOT = Path(SPECPATH).parent.parent  # repo root
-LITELLM_DIR = Path(litellm.__file__).parent
 
-# Insert ROOT so collect_submodules can find nanobot (requires pip install -e .)
+# Insert ROOT so collect_submodules can find pgflow (requires pip install -e .)
 sys.path.insert(0, str(ROOT))
 
-# Collect all nanobot submodules (hiddenimports)
-nanobot_hidden = collect_submodules("nanobot")
+# Collect all pgflow submodules (hiddenimports)
+pgflow_hidden = collect_submodules("pgflow")
 
 a = Analysis(
-    [str(ROOT / "nanobot" / "__main__.py")],
+    [str(ROOT / "pgflow" / "__main__.py")],
     pathex=[str(ROOT)],
     binaries=[],
     datas=[
-        # Ship nanobot Python source as data files — guarantees every .py is present
+        # Ship pgflow Python source as data files — guarantees every .py is present
         # regardless of PyInstaller's static analysis result.
         # A runtime hook adds this to sys.path so imports work normally.
-        (str(ROOT / "nanobot"), "nanobot_src/nanobot"),
-        # Ship litellm Python source as data files — same reason as nanobot above.
-        (str(LITELLM_DIR), "litellm_src/litellm"),
+        (str(ROOT / "pgflow"), "pgflow_src/pgflow"),
         # Include all template markdown files
-        (str(ROOT / "nanobot" / "templates"), "nanobot/templates"),
+        (str(ROOT / "pgflow" / "templates"), "pgflow/templates"),
         # Include built-in skills
-        (str(ROOT / "nanobot" / "skills"), "nanobot/skills"),
+        (str(ROOT / "pgflow" / "skills"), "pgflow/skills"),
         # Include bridge (WhatsApp bridge binaries)
-        (str(ROOT / "bridge"), "nanobot/bridge"),
-        # litellm model pricing data (required at runtime, missed by PyInstaller)
-        (str(LITELLM_DIR / "model_prices_and_context_window_backup.json"), "litellm"),
+        (str(ROOT / "bridge"), "pgflow/bridge"),
         # Project logo for tray icon
-        (str(ROOT / "nanobot_logo.png"), "."),
+        (str(ROOT / "pgflow_logo.png"), "."),
     ],
-    hiddenimports=nanobot_hidden + [
+    hiddenimports=pgflow_hidden + [
         # Deps that PyInstaller misses
         "tiktoken_ext.openai_public",
         "tiktoken_ext",
@@ -65,7 +60,7 @@ a = Analysis(
     ],
     hookspath=[str(ROOT / "build" / "windows" / "hooks")],
     hooksconfig={},
-    runtime_hooks=[str(ROOT / "build" / "windows" / "rthook_nanobot.py")],
+    runtime_hooks=[str(ROOT / "build" / "windows" / "rthook_pgflow.py")],
     excludes=["tkinter", "matplotlib", "numpy", "pandas"],
     noarchive=False,
     optimize=1,

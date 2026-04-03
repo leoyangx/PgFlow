@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.base import BaseChannel
+from pgflow.bus.events import OutboundMessage
+from pgflow.bus.queue import MessageBus
+from pgflow.channels.base import BaseChannel
 
 
 class _DummyChannel(BaseChannel):

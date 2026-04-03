@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.base import BaseChannel
-from nanobot.channels.manager import ChannelManager
-from nanobot.config.schema import Config
+from pgflow.bus.events import OutboundMessage
+from pgflow.bus.queue import MessageBus
+from pgflow.channels.base import BaseChannel
+from pgflow.channels.manager import ChannelManager
+from pgflow.config.schema import Config
 
 
 class MockChannel(BaseChannel):

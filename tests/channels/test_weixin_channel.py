@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.weixin import (
+from pgflow.bus.queue import MessageBus
+from pgflow.channels.weixin import (
     ITEM_IMAGE,
     ITEM_TEXT,
     MESSAGE_TYPE_BOT,

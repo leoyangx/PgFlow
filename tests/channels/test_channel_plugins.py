@@ -7,11 +7,11 @@ from unittest.mock import patch
 
 import pytest
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.base import BaseChannel
-from nanobot.channels.manager import ChannelManager
-from nanobot.config.schema import ChannelsConfig
+from pgflow.bus.events import OutboundMessage
+from pgflow.bus.queue import MessageBus
+from pgflow.channels.base import BaseChannel
+from pgflow.channels.manager import ChannelManager
+from pgflow.config.schema import ChannelsConfig
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +98,7 @@ _EP_TARGET = "importlib.metadata.entry_points"
 
 
 def test_discover_plugins_loads_entry_points():
-    from nanobot.channels.registry import discover_plugins
+    from pgflow.channels.registry import discover_plugins
 
     ep = _make_entry_point("line", _FakePlugin)
     with patch(_EP_TARGET, return_value=[ep]):
@@ -109,7 +109,7 @@ def test_discover_plugins_loads_entry_points():
 
 
 def test_discover_plugins_handles_load_error():
-    from nanobot.channels.registry import discover_plugins
+    from pgflow.channels.registry import discover_plugins
 
     def _boom():
         raise RuntimeError("broken")
@@ -126,7 +126,7 @@ def test_discover_plugins_handles_load_error():
 # ---------------------------------------------------------------------------
 
 def test_discover_all_includes_builtins():
-    from nanobot.channels.registry import discover_all, discover_channel_names
+    from pgflow.channels.registry import discover_all, discover_channel_names
 
     with patch(_EP_TARGET, return_value=[]):
         result = discover_all()
@@ -139,7 +139,7 @@ def test_discover_all_includes_builtins():
 
 
 def test_discover_all_includes_external_plugin():
-    from nanobot.channels.registry import discover_all
+    from pgflow.channels.registry import discover_all
 
     ep = _make_entry_point("line", _FakePlugin)
     with patch(_EP_TARGET, return_value=[ep]):
@@ -150,7 +150,7 @@ def test_discover_all_includes_external_plugin():
 
 
 def test_discover_all_builtin_shadows_plugin():
-    from nanobot.channels.registry import discover_all
+    from pgflow.channels.registry import discover_all
 
     ep = _make_entry_point("telegram", _FakeTelegram)
     with patch(_EP_TARGET, return_value=[ep]):
@@ -167,7 +167,7 @@ def test_discover_all_builtin_shadows_plugin():
 @pytest.mark.asyncio
 async def test_manager_loads_plugin_from_dict_config():
     """ChannelManager should instantiate a plugin channel from a raw dict config."""
-    from nanobot.channels.manager import ChannelManager
+    from pgflow.channels.manager import ChannelManager
 
     fake_config = SimpleNamespace(
         channels=ChannelsConfig.model_validate({
@@ -177,7 +177,7 @@ async def test_manager_loads_plugin_from_dict_config():
     )
 
     with patch(
-        "nanobot.channels.registry.discover_all",
+        "pgflow.channels.registry.discover_all",
         return_value={"fakeplugin": _FakePlugin},
     ):
         mgr = ChannelManager.__new__(ChannelManager)
@@ -192,8 +192,8 @@ async def test_manager_loads_plugin_from_dict_config():
 
 
 def test_channels_login_uses_discovered_plugin_class(monkeypatch):
-    from nanobot.cli.commands import app
-    from nanobot.config.schema import Config
+    from pgflow.cli.commands import app
+    from pgflow.config.schema import Config
     from typer.testing import CliRunner
 
     runner = CliRunner()
@@ -207,9 +207,9 @@ def test_channels_login_uses_discovered_plugin_class(monkeypatch):
             seen["config"] = self.config
             return True
 
-    monkeypatch.setattr("nanobot.config.loader.load_config", lambda: Config())
+    monkeypatch.setattr("pgflow.config.loader.load_config", lambda: Config())
     monkeypatch.setattr(
-        "nanobot.channels.registry.discover_all",
+        "pgflow.channels.registry.discover_all",
         lambda: {"fakeplugin": _LoginPlugin},
     )
 
@@ -229,7 +229,7 @@ async def test_manager_skips_disabled_plugin():
     )
 
     with patch(
-        "nanobot.channels.registry.discover_all",
+        "pgflow.channels.registry.discover_all",
         return_value={"fakeplugin": _FakePlugin},
     ):
         mgr = ChannelManager.__new__(ChannelManager)
@@ -248,7 +248,7 @@ async def test_manager_skips_disabled_plugin():
 
 def test_builtin_channel_default_config():
     """Built-in channels expose default_config() returning a dict with 'enabled': False."""
-    from nanobot.channels.telegram import TelegramChannel
+    from pgflow.channels.telegram import TelegramChannel
     cfg = TelegramChannel.default_config()
     assert isinstance(cfg, dict)
     assert cfg["enabled"] is False
@@ -257,7 +257,7 @@ def test_builtin_channel_default_config():
 
 def test_builtin_channel_init_from_dict():
     """Built-in channels accept a raw dict and convert to Pydantic internally."""
-    from nanobot.channels.telegram import TelegramChannel
+    from pgflow.channels.telegram import TelegramChannel
     bus = MessageBus()
     ch = TelegramChannel({"enabled": False, "token": "test-tok", "allowFrom": ["*"]}, bus)
     assert ch.config.token == "test-tok"

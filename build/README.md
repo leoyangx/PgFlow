@@ -67,7 +67,7 @@ REM macOS
 ```
 
 ### Q: 如何更新版本号
-修改 `nanobot/__init__.py` 里的 `__version__`，然后重新打包。
+修改 `pgflow/__init__.py` 里的 `__version__`，然后重新打包。
 
 ---
 

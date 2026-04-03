@@ -8,8 +8,8 @@ Build a custom PgFlow channel in three steps: subclass, package, install.
 
 PgFlow discovers channel plugins via Python [entry points](https://packaging.python.org/en/latest/specifications/entry-points/). When `pgflow gateway` starts, it scans:
 
-1. Built-in channels in `nanobot/channels/`
-2. External packages registered under the `nanobot.channels` entry point group
+1. Built-in channels in `pgflow/channels/`
+2. External packages registered under the `pgflow.channels` entry point group
 
 If a matching config section has `"enabled": true`, the channel is instantiated and started.
 
@@ -44,8 +44,8 @@ from typing import Any
 from aiohttp import web
 from loguru import logger
 
-from nanobot.channels.base import BaseChannel
-from nanobot.bus.events import OutboundMessage
+from pgflow.channels.base import BaseChannel
+from pgflow.bus.events import OutboundMessage
 
 
 class WebhookChannel(BaseChannel):
@@ -122,7 +122,7 @@ name = "pgflow-channel-webhook"
 version = "0.1.0"
 dependencies = ["pgflow", "aiohttp"]
 
-[project.entry-points."nanobot.channels"]
+[project.entry-points."pgflow.channels"]
 webhook = "pgflow_channel_webhook:WebhookChannel"
 
 [build-system]

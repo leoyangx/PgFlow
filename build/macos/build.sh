@@ -6,7 +6,7 @@
 set -e
 cd "$(dirname "$0")/../.."
 
-APP_VERSION=$(python -c "from nanobot import __version__; print(__version__)")
+APP_VERSION=$(python -c "from pgflow import __version__; print(__version__)")
 DMG_NAME="PgFlow-${APP_VERSION}-macOS"
 
 echo "[1/3] Installing build dependencies..."

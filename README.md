@@ -1,36 +1,27 @@
 <div align="center">
   <img src="logo.png" alt="PgFlow Logo" width="500">
 
-  <p><strong>本地优先的个人 AI 助手 — 随你成长，数据永不离手</strong></p>
-  
-  <p>
+<p><strong>本地优先的个人 AI 助手 — 随你成长，数据永不离手</strong></p>
+
+<p>
     <img src="https://img.shields.io/badge/version-0.1.2-blue" alt="Version">
     <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform">
   </p>
-  
-  <p>
+
+<p>
     <a href="https://github.com/leoyangx/PgFlow/releases">📦 下载最新版</a> ·
     <a href="https://github.com/leoyangx/PgFlow/issues">🐛 反馈问题</a> ·
     <a href="https://github.com/leoyangx/PgFlow">⭐ GitHub</a>
   </p>
 </div>
 
-> PgFlow 基于 [HKUDS/nanobot](https://github.com/HKUDS/nanobot) 二次开发，面向 C 端普通用户做了大量工程化改进。
-
 ---
 
 ## 什么是 PgFlow？
 
 PgFlow 是一个运行在你自己电脑或服务器上的个人 AI 助手。它通过 Telegram、飞书、Discord 等你日常使用的聊天工具和你对话，可以读写文件、执行命令、搜索网页、设置定时任务。你的所有数据和对话记录都保存在本地，永远不会上传给任何第三方。
-
-**和 ChatGPT 网页版的区别：**
-
-- 你的 AI 记得你——跨会话记忆，越用越懂你
-- 在你的电脑上跑，能操作本地文件和终端
-- 用你选择的任意 AI 模型，不锁定任何平台
-- 通过 Telegram 等任何地方随时呼叫
 
 ---
 
@@ -58,9 +49,9 @@ PgFlow 是一个运行在你自己电脑或服务器上的个人 AI 助手。它
 
 ---
 
-## 🆚 相比原版 nanobot 的改进（v0.1.2）
+## v0.1.2 核心改进
 
-PgFlow 在 nanobot 核心引擎基础上进行了大量工程化改造，使普通用户无需任何 Python 知识即可使用：
+PgFlow 经过大量工程化改造，使普通用户无需任何 Python 知识即可使用：
 
 ### 安全架构升级
 
@@ -361,16 +352,49 @@ PGFLOW_CONFIG=~/.pgflow/config-work.json pgflow gateway
 
 ## 💻 CLI 命令参考
 
-| 命令                            | 说明              |
-| ----------------------------- | --------------- |
-| `pgflow gateway`              | 启动网关（连接所有已启用渠道） |
-| `pgflow agent`                | 终端交互聊天（直接对话）    |
-| `pgflow agent -m "..."`       | 发送单条消息后退出       |
-| `pgflow dashboard`            | 仅启动管理面板（不启动网关）  |
-| `pgflow status`               | 显示当前配置状态        |
-| `pgflow onboard --wizard`     | 首次配置向导          |
-| `pgflow skill list`           | 列出已安装技能         |
-| `pgflow skill install <slug>` | 从 ClawHub 安装技能  |
+### 核心命令
+
+| 命令 | 说明 |
+| ---- | ---- |
+| `pgflow onboard` | 初始化配置和工作区（`--wizard` 交互向导） |
+| `pgflow gateway` | 启动网关，连接所有已启用渠道 |
+| `pgflow agent` | 终端交互聊天 |
+| `pgflow agent -m "..."` | 发送单条消息后退出 |
+| `pgflow dashboard` | 仅启动管理面板（不启动网关） |
+| `pgflow status` | 显示当前配置和连接状态 |
+
+### 渠道与插件
+
+| 命令 | 说明 |
+| ---- | ---- |
+| `pgflow channels status` | 查看各渠道启用状态 |
+| `pgflow channels login` | 渠道交互认证（WhatsApp 二维码等） |
+| `pgflow plugins list` | 列出所有渠道插件（内置 + 第三方） |
+
+### 技能管理
+
+| 命令 | 说明 |
+| ---- | ---- |
+| `pgflow skill list` | 查看已安装技能（工作区 + 内置） |
+| `pgflow skill search <关键词>` | 搜索 ClawHub 可用技能 |
+| `pgflow skill install <slug>` | 从 ClawHub 安装技能 |
+| `pgflow skill remove <名称>` | 删除工作区技能 |
+| `pgflow skill update` | 更新所有工作区技能 |
+
+### 系统服务（Linux / macOS）
+
+| 命令 | 说明 |
+| ---- | ---- |
+| `pgflow service install` | 安装为系统服务（开机自动启动） |
+| `pgflow service uninstall` | 取消自动启动 |
+| `pgflow service status` | 查看服务运行状态 |
+
+### 开发者
+
+| 命令 | 说明 |
+| ---- | ---- |
+| `pgflow build [--platform auto\|windows\|macos]` | 打包为独立桌面 exe |
+| `pgflow provider login` | OAuth 认证（GitHub Copilot、OpenAI Codex 等） |
 
 ---
 
@@ -437,7 +461,7 @@ uv run pytest tests/agent/test_loop_save_turn.py -v
 uv run pytest -k "test_heartbeat" -v
 
 # 带覆盖率
-uv run pytest --cov=nanobot tests/
+uv run pytest --cov=pgflow tests/
 ```
 
 CI 在 Python 3.11、3.12、3.13 下自动运行（GitHub Actions）。
@@ -451,8 +475,8 @@ CI 在 Python 3.11、3.12、3.13 下自动运行（GitHub Actions）。
 uv sync --all-extras
 
 # 代码检查
-ruff check nanobot/
-ruff format nanobot/
+ruff check pgflow/
+ruff format pgflow/
 
 # 打包 Windows exe
 py -m PyInstaller build/windows/pgflow.spec --noconfirm
@@ -464,7 +488,7 @@ py -m PyInstaller build/windows/pgflow.spec --noconfirm
 
 ```
 PgFlow/
-├── nanobot/
+├── pgflow/
 │   ├── agent/          # AgentLoop、AgentRunner、AgentHook、SubagentManager
 │   ├── channels/       # 10 个渠道集成（telegram、feishu、discord 等）
 │   ├── cli/            # CLI 命令（gateway、agent、dashboard、status）
@@ -486,5 +510,5 @@ PgFlow/
 ---
 
 <div align="center">
-  <sub>基于 <a href="https://github.com/HKUDS/nanobot">HKUDS/nanobot</a> 二次开发 · Built upon HKUDS/nanobot</sub>
+  <sub>MIT License · © 2025 PgFlow contributors</sub>
 </div>

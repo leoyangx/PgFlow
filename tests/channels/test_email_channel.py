@@ -4,10 +4,10 @@ import imaplib
 
 import pytest
 
-from nanobot.bus.events import OutboundMessage
-from nanobot.bus.queue import MessageBus
-from nanobot.channels.email import EmailChannel
-from nanobot.channels.email import EmailConfig
+from pgflow.bus.events import OutboundMessage
+from pgflow.bus.queue import MessageBus
+from pgflow.channels.email import EmailChannel
+from pgflow.channels.email import EmailConfig
 
 
 def _make_config() -> EmailConfig:
@@ -69,7 +69,7 @@ def test_fetch_new_messages_parses_unseen_and_marks_seen(monkeypatch) -> None:
             return "BYE", [b""]
 
     fake = FakeIMAP()
-    monkeypatch.setattr("nanobot.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: fake)
+    monkeypatch.setattr("pgflow.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: fake)
 
     channel = EmailChannel(_make_config(), MessageBus())
     items = channel._fetch_new_messages()
@@ -124,7 +124,7 @@ def test_fetch_new_messages_retries_once_when_imap_connection_goes_stale(monkeyp
         fake_instances.append(instance)
         return instance
 
-    monkeypatch.setattr("nanobot.channels.email.imaplib.IMAP4_SSL", _factory)
+    monkeypatch.setattr("pgflow.channels.email.imaplib.IMAP4_SSL", _factory)
 
     channel = EmailChannel(_make_config(), MessageBus())
     items = channel._fetch_new_messages()
@@ -170,7 +170,7 @@ def test_fetch_new_messages_keeps_messages_collected_before_stale_retry(monkeypa
         def logout(self):
             return "BYE", [b""]
 
-    monkeypatch.setattr("nanobot.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: FlakyIMAP())
+    monkeypatch.setattr("pgflow.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: FlakyIMAP())
 
     channel = EmailChannel(_make_config(), MessageBus())
     items = channel._fetch_new_messages()
@@ -190,7 +190,7 @@ def test_fetch_new_messages_skips_missing_mailbox(monkeypatch) -> None:
             return "BYE", [b""]
 
     monkeypatch.setattr(
-        "nanobot.channels.email.imaplib.IMAP4_SSL",
+        "pgflow.channels.email.imaplib.IMAP4_SSL",
         lambda _h, _p: MissingMailboxIMAP(),
     )
 
@@ -260,7 +260,7 @@ async def test_send_uses_smtp_and_reply_subject(monkeypatch) -> None:
         fake_instances.append(instance)
         return instance
 
-    monkeypatch.setattr("nanobot.channels.email.smtplib.SMTP", _smtp_factory)
+    monkeypatch.setattr("pgflow.channels.email.smtplib.SMTP", _smtp_factory)
 
     channel = EmailChannel(_make_config(), MessageBus())
     channel._last_subject_by_chat["alice@example.com"] = "Invoice #42"
@@ -314,7 +314,7 @@ async def test_send_skips_reply_when_auto_reply_disabled(monkeypatch) -> None:
         fake_instances.append(instance)
         return instance
 
-    monkeypatch.setattr("nanobot.channels.email.smtplib.SMTP", _smtp_factory)
+    monkeypatch.setattr("pgflow.channels.email.smtplib.SMTP", _smtp_factory)
 
     cfg = _make_config()
     cfg.auto_reply_enabled = False
@@ -375,7 +375,7 @@ async def test_send_proactive_email_when_auto_reply_disabled(monkeypatch) -> Non
         fake_instances.append(instance)
         return instance
 
-    monkeypatch.setattr("nanobot.channels.email.smtplib.SMTP", _smtp_factory)
+    monkeypatch.setattr("pgflow.channels.email.smtplib.SMTP", _smtp_factory)
 
     cfg = _make_config()
     cfg.auto_reply_enabled = False
@@ -423,7 +423,7 @@ async def test_send_skips_when_consent_not_granted(monkeypatch) -> None:
         called["smtp"] = True
         return FakeSMTP(host, port, timeout=timeout)
 
-    monkeypatch.setattr("nanobot.channels.email.smtplib.SMTP", _smtp_factory)
+    monkeypatch.setattr("pgflow.channels.email.smtplib.SMTP", _smtp_factory)
 
     cfg = _make_config()
     cfg.consent_granted = False
@@ -468,7 +468,7 @@ def test_fetch_messages_between_dates_uses_imap_since_before_without_mark_seen(m
             return "BYE", [b""]
 
     fake = FakeIMAP()
-    monkeypatch.setattr("nanobot.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: fake)
+    monkeypatch.setattr("pgflow.channels.email.imaplib.IMAP4_SSL", lambda _h, _p: fake)
 
     channel = EmailChannel(_make_config(), MessageBus())
     items = channel.fetch_messages_between_dates(

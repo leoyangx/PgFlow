@@ -2,9 +2,6 @@
 
 Thank you for your interest in contributing.
 
-> PgFlow is built upon [nanobot-ai/nanobot](https://github.com/nanobot-ai/nanobot).
-> We thank the original authors and all contributors for their foundational work.
-
 PgFlow is built with a simple belief: good tools should feel calm, clear, and humane.
 We care deeply about useful features, but we also believe in achieving more with less.
 
@@ -33,10 +30,10 @@ pip install -e ".[dev]"
 pytest
 
 # Lint
-ruff check nanobot/
+ruff check pgflow/
 
 # Format
-ruff format nanobot/
+ruff format pgflow/
 ```
 
 ## Code Style
