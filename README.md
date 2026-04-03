@@ -4,7 +4,7 @@
 <p><strong>本地优先的个人 AI 助手 — 随你成长，数据永不离手</strong></p>
 
 <p>
-    <img src="https://img.shields.io/badge/version-0.1.2-blue" alt="Version">
+    <img src="https://img.shields.io/badge/version-0.1.3-blue" alt="Version">
     <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform">
@@ -50,7 +50,22 @@ PgFlow 是一个运行在你自己电脑或服务器上的个人 AI 助手。它
 
 ---
 
-## v0.1.2 核心改进
+## v0.1.3 核心改进
+
+PgFlow v0.1.3 在智能体能力和管理面板两个方向做了重要升级。
+
+### 智能体能力升级
+
+- **SOUL.md 行为契约化**：重构为四层结构（身份 / 行为纪律 / 行动安全 / 沟通契约），明确 PgFlow 定位为高级智能体
+- **MEMORY.md 截断保护**：超 200 行或 25KB 自动截断，防止上下文无限膨胀
+
+### 管理面板全面重构
+
+- **布局**：左侧竖排导航，内容区两列展示，空白大幅减少
+- **日志页**：修复过滤按钮 Bug，切换 Tab 自动加载
+- **文档页**：15 个子页面独立切换，不再需要滚动
+
+### v0.1.2 主要特性
 
 PgFlow 经过大量工程化改造，使普通用户无需任何 Python 知识即可使用：
 
@@ -511,5 +526,5 @@ PgFlow/
 ---
 
 <div align="center">
-  <sub>MIT License · © 2025 PgFlow contributors</sub>
+  <sub>MIT License · © 2025 PgFlow contributors · <a href="CHANGELOG.md">Changelog</a> · <a href="CONTRIBUTING.md">Contributing</a> · <a href="SECURITY.md">Security</a></sub>
 </div>

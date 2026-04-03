@@ -29,19 +29,26 @@ _HTML = r"""<!DOCTYPE html>
     --bg: #0f1117; --card: #1a1d2e; --border: #2a2d3e;
     --accent: #4f8ef7; --green: #3ecf8e; --red: #f66; --text: #e2e8f0;
     --muted: #6b7280; --radius: 10px; --amber: #f59e0b;
+    --nav-w: 180px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
-  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
-  header h1 { font-size: 20px; font-weight: 700; color: var(--accent); }
-  header span.logo { font-size: 24px; }
-  nav { display: flex; gap: 0; padding: 0 32px; background: var(--card); border-bottom: 1px solid var(--border); }
-  nav button { background: none; border: none; color: var(--muted); padding: 12px 20px; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; transition: all .2s; }
-  nav button.active, nav button:hover { color: var(--accent); border-bottom-color: var(--accent); }
-  main { padding: 32px; max-width: 960px; margin: 0 auto; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  header h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+  header span.logo { font-size: 22px; }
+  /* Layout: sidebar nav + main content */
+  .layout { display: flex; flex: 1; overflow: hidden; }
+  nav { width: var(--nav-w); background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; flex-shrink: 0; }
+  nav button { background: none; border: none; color: var(--muted); padding: 10px 12px; cursor: pointer; font-size: 13px; border-radius: 8px; text-align: left; transition: all .15s; width: 100%; }
+  nav button.active { background: #1e2a44; color: var(--accent); font-weight: 600; }
+  nav button:hover:not(.active) { background: #1a1d2e; color: var(--text); }
+  main { flex: 1; padding: 24px 28px; overflow-y: auto; }
   .tab { display: none; } .tab.active { display: block; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
-  .card h2 { font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  /* Two-column grid for status page */
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .status-grid .card { margin-bottom: 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
   .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .row:last-child { border-bottom: none; }
   .row label { color: var(--muted); font-size: 13px; }
@@ -123,7 +130,8 @@ _HTML = r"""<!DOCTYPE html>
   .skill-row:last-child { border-bottom: none; }
   .skill-meta { flex: 1; }
   /* Docs */
-  .doc-section { margin-bottom: 32px; }
+  .doc-section { margin-bottom: 32px; display: none; }
+  .doc-section.active { display: block; }
   .doc-section h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
   .doc-section p { font-size: 14px; color: #a8b3cf; line-height: 1.8; margin-bottom: 10px; }
   .doc-section ol, .doc-section ul { padding-left: 20px; margin-bottom: 10px; }
@@ -144,6 +152,7 @@ _HTML = r"""<!DOCTYPE html>
   <span class="logo">🌊</span>
   <h1>PgFlow Dashboard</h1>
 </header>
+<div class="layout">
 <nav>
   <button class="active" onclick="show('status', this)">状态</button>
   <button onclick="show('skills', this)">技能</button>
@@ -171,58 +180,62 @@ _HTML = r"""<!DOCTYPE html>
   </div>
 
   <!-- Gateway Status (read-only — use tray icon to start/stop) -->
-  <div class="card">
-    <h2>网关状态</h2>
-    <div class="row">
-      <label>运行状态</label>
-      <div class="gateway-status">
-        <span class="dot" id="gw-dot"></span>
-        <span id="gw-label">检测中…</span>
+  <div class="status-grid">
+    <div class="card">
+      <h2>网关状态</h2>
+      <div class="row">
+        <label>运行状态</label>
+        <div class="gateway-status">
+          <span class="dot" id="gw-dot"></span>
+          <span id="gw-label">检测中…</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>提示</label>
+        <span style="font-size:12px;color:var(--muted)">通过系统托盘图标启动或停止网关</span>
       </div>
     </div>
-    <div class="row">
-      <label>提示</label>
-      <span style="font-size:12px;color:var(--muted)">通过系统托盘图标启动或停止网关</span>
+
+    <!-- 版本信息 -->
+    <div class="card" id="version-card">
+      <h2>版本信息</h2>
+      <div class="row">
+        <label>当前版本</label>
+        <span id="ver-current"><span class="badge gray">检测中…</span></span>
+      </div>
+      <div class="row">
+        <label>最新版本</label>
+        <span id="ver-latest"><span class="badge gray">检测中…</span></span>
+      </div>
+      <div id="ver-update-row" class="row" style="display:none">
+        <label>新版提示</label>
+        <button id="ver-update-btn" class="btn btn-green" onclick="startUpdate()" style="font-size:13px">⬇ 一键更新</button>
+      </div>
+      <div id="ver-update-progress" style="display:none;margin-top:12px">
+        <div style="background:#0a0c15;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px">
+          <div id="ver-progress-bar" style="height:100%;width:0%;background:var(--green);transition:width .3s"></div>
+        </div>
+        <div id="ver-progress-msg" style="font-size:12px;color:var(--muted)"></div>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>运行状态</h2>
-    <div id="status-rows"><div class="empty">加载中…</div></div>
-  </div>
+  <div class="status-grid">
+    <div class="card">
+      <h2>运行状态</h2>
+      <div id="status-rows"><div class="empty">加载中…</div></div>
+    </div>
 
-  <!-- 已连接渠道 -->
-  <div class="card">
-    <h2>已启用渠道</h2>
-    <div id="channel-status-rows"><div class="empty">加载中…</div></div>
+    <!-- 已连接渠道 -->
+    <div class="card">
+      <h2>已启用渠道</h2>
+      <div id="channel-status-rows"><div class="empty">加载中…</div></div>
+    </div>
   </div>
 
   <div class="card">
     <h2>工作区</h2>
     <div id="workspace-rows"><div class="empty">加载中…</div></div>
-  </div>
-
-  <!-- 版本信息 -->
-  <div class="card" id="version-card">
-    <h2>版本信息</h2>
-    <div class="row">
-      <label>当前版本</label>
-      <span id="ver-current"><span class="badge gray">检测中…</span></span>
-    </div>
-    <div class="row">
-      <label>最新版本</label>
-      <span id="ver-latest"><span class="badge gray">检测中…</span></span>
-    </div>
-    <div id="ver-update-row" class="row" style="display:none">
-      <label>新版提示</label>
-      <button id="ver-update-btn" class="btn btn-green" onclick="startUpdate()" style="font-size:13px">⬇ 一键更新</button>
-    </div>
-    <div id="ver-update-progress" style="display:none;margin-top:12px">
-      <div style="background:#0a0c15;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px">
-        <div id="ver-progress-bar" style="height:100%;width:0%;background:var(--green);transition:width .3s"></div>
-      </div>
-      <div id="ver-progress-msg" style="font-size:12px;color:var(--muted)"></div>
-    </div>
   </div>
 </div>
 
@@ -746,23 +759,23 @@ _HTML = r"""<!DOCTYPE html>
 <!-- DOCS TAB -->
 <div id="tab-docs" class="tab">
 
-  <!-- 平台导航 -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <button class="btn btn-primary" onclick="scrollToDoc('doc-win')">🪟 Windows</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-mac')">🍎 macOS</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-linux')">🐧 Linux</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-vps')">☁️ VPS 服务器</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-telegram')">✈️ Telegram</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-discord')">🎮 Discord</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-feishu')">🪶 飞书</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-dingtalk')">📎 钉钉</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-qq')">🐧 QQ</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-wecom')">💼 企业微信</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-email')">📧 邮件</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-providers')">🤖 AI 服务商</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-workspace')">📁 工作区文件</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-faq')">❓ 常见问题</button>
-    <button class="btn btn-muted"   onclick="scrollToDoc('doc-multiagent')">🤖 多 Agent</button>
+  <!-- 文档子页面导航 -->
+  <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-primary" id="docnav-win"       onclick="showDoc('doc-win')"       >🪟 Windows</button>
+    <button class="btn btn-muted"   id="docnav-mac"       onclick="showDoc('doc-mac')"       >🍎 macOS</button>
+    <button class="btn btn-muted"   id="docnav-linux"     onclick="showDoc('doc-linux')"     >🐧 Linux</button>
+    <button class="btn btn-muted"   id="docnav-vps"       onclick="showDoc('doc-vps')"       >☁️ VPS</button>
+    <button class="btn btn-muted"   id="docnav-telegram"  onclick="showDoc('doc-telegram')"  >✈️ Telegram</button>
+    <button class="btn btn-muted"   id="docnav-discord"   onclick="showDoc('doc-discord')"   >🎮 Discord</button>
+    <button class="btn btn-muted"   id="docnav-feishu"    onclick="showDoc('doc-feishu')"    >🪶 飞书</button>
+    <button class="btn btn-muted"   id="docnav-dingtalk"  onclick="showDoc('doc-dingtalk')"  >📎 钉钉</button>
+    <button class="btn btn-muted"   id="docnav-qq"        onclick="showDoc('doc-qq')"        >🐧 QQ</button>
+    <button class="btn btn-muted"   id="docnav-wecom"     onclick="showDoc('doc-wecom')"     >💼 企业微信</button>
+    <button class="btn btn-muted"   id="docnav-email"     onclick="showDoc('doc-email')"     >📧 邮件</button>
+    <button class="btn btn-muted"   id="docnav-providers" onclick="showDoc('doc-providers')" >🤖 AI 服务商</button>
+    <button class="btn btn-muted"   id="docnav-workspace" onclick="showDoc('doc-workspace')" >📁 工作区</button>
+    <button class="btn btn-muted"   id="docnav-multiagent" onclick="showDoc('doc-multiagent')">🤖 多 Agent</button>
+    <button class="btn btn-muted"   id="docnav-faq"       onclick="showDoc('doc-faq')"       >❓ FAQ</button>
   </div>
 
   <div class="card">
@@ -1389,6 +1402,7 @@ _HTML = r"""<!DOCTYPE html>
 </div>
 
 </main>
+</div>
 <script>
 // ── Utilities ──────────────────────────────────────────────────────────────
 function copyCmd(el) {
@@ -1399,9 +1413,20 @@ function copyCmd(el) {
   });
 }
 
-function scrollToDoc(id) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+function showDoc(id) {
+  // Hide all doc sections
+  document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+  // Show the selected one
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  // Update nav button styles
+  const key = id.replace('doc-', '');
+  document.querySelectorAll('[id^="docnav-"]').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-muted');
+  });
+  const activeBtn = document.getElementById('docnav-' + key);
+  if (activeBtn) { activeBtn.classList.remove('btn-muted'); activeBtn.classList.add('btn-primary'); }
 }
 
 function show(name, btn) {
@@ -1413,6 +1438,7 @@ function show(name, btn) {
   if (name === 'skills') loadSkills();
   if (name === 'config') loadFormConfig();
   if (name === 'logs')   loadLogs();
+  if (name === 'docs')   showDoc('doc-win');
 }
 
 function mask(v) {
@@ -2287,7 +2313,9 @@ function _renderFilteredLogs() {
   let lines = _logRawLines;
   if (_logFilter !== 'all') {
     const filterUpper = _logFilter.toUpperCase();
-    lines = lines.filter(l => l.toUpperCase().includes(filterUpper));
+    // Match log level as a word boundary to avoid false positives (e.g. DEBUG matching "debug info")
+    const re = new RegExp('\\b' + filterUpper + '\\b');
+    lines = lines.filter(l => re.test(l.toUpperCase()));
   }
   if (lines.length === 0) {
     el.innerHTML = `<span style="color:var(--muted)">（无 ${_logFilter} 级别日志）</span>`;
@@ -2297,7 +2325,7 @@ function _renderFilteredLogs() {
   if (atBottom) el.scrollTop = el.scrollHeight;
 }
 
-function setLogFilter(level) {
+async function setLogFilter(level) {
   _logFilter = level;
   // Update button styles
   const levels = ['all', 'ERROR', 'WARNING', 'INFO', 'DEBUG'];
@@ -2305,7 +2333,8 @@ function setLogFilter(level) {
     const btn = document.getElementById('log-filter-' + l);
     if (btn) btn.style.outline = l === level ? '2px solid var(--accent)' : 'none';
   }
-  _renderFilteredLogs();
+  if (_logRawLines.length === 0) await loadLogs();
+  else _renderFilteredLogs();
 }
 
 async function loadLogs() {

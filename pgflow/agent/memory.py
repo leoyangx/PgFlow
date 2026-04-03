@@ -95,9 +95,31 @@ class MemoryStore:
         with open(self.history_file, "a", encoding="utf-8") as f:
             f.write(entry.rstrip() + "\n\n")
 
+    _MEMORY_MAX_LINES = 200
+    _MEMORY_MAX_BYTES = 25_000
+
     def get_memory_context(self) -> str:
         long_term = self.read_long_term()
-        return f"## Long-term Memory\n{long_term}" if long_term else ""
+        if not long_term:
+            return ""
+        truncated = False
+        # Byte limit check first (cheaper)
+        if len(long_term.encode("utf-8")) > self._MEMORY_MAX_BYTES:
+            # Truncate to at most _MEMORY_MAX_BYTES bytes without splitting a codepoint
+            encoded = long_term.encode("utf-8")[: self._MEMORY_MAX_BYTES]
+            long_term = encoded.decode("utf-8", errors="ignore")
+            truncated = True
+        # Line limit check
+        lines = long_term.splitlines()
+        if len(lines) > self._MEMORY_MAX_LINES:
+            long_term = "\n".join(lines[: self._MEMORY_MAX_LINES])
+            truncated = True
+        if truncated:
+            long_term += (
+                "\n\n⚠️ MEMORY.md 已截断（超过上限），旧记录可能已省略。"
+                "请适时整理 MEMORY.md，保持简洁。"
+            )
+        return f"## Long-term Memory\n{long_term}"
 
     @staticmethod
     def _format_messages(messages: list[dict]) -> str:
